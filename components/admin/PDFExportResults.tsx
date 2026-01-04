@@ -11,6 +11,12 @@ interface PDFExportProps {
 export default function PDFExportResults({ data }: PDFExportProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [selectedId, setSelectedId] = useState<string>('ALL');
+
+    // Filter Logic
+    const filteredData = selectedId === 'ALL'
+        ? data
+        : data.filter(r => r.id === selectedId);
 
     const generatePDF = (mode: 'SUMMARY' | 'DETAIL') => {
         setIsGenerating(true);
@@ -22,6 +28,13 @@ export default function PDFExportResults({ data }: PDFExportProps) {
                 const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for better table fit
                 const pageWidth = doc.internal.pageSize.width;
 
+                // [FILENAME GENERATION]
+                let filenameLabel = 'ALL';
+                if (selectedId !== 'ALL' && filteredData.length > 0) {
+                    // Sanitize name for filename
+                    filenameLabel = filteredData[0].participantName.replace(/[^a-zA-Z0-9]/g, '_');
+                }
+
                 // Header
                 doc.setFontSize(18);
                 doc.setTextColor(40, 40, 40);
@@ -32,13 +45,20 @@ export default function PDFExportResults({ data }: PDFExportProps) {
                 doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}`, 14, 22);
                 doc.text(`Modo: ${mode === 'SUMMARY' ? 'RESUMEN EJECUTIVO' : 'REPORTE DETALLADO'}`, 14, 27);
 
+                if (selectedId !== 'ALL' && filteredData.length > 0) {
+                    doc.setTextColor(133, 67, 154); // Purple
+                    doc.text(`Participante: ${filteredData[0].participantName}`, 14, 32);
+                } else {
+                    doc.text(`Participante: TODOS (${filteredData.length})`, 14, 32);
+                }
+
                 // [DYNAMIC COLUMN LOGIC]
                 // 1. Calculate Max Criteria to define total columns needed
                 let maxCriteria = 0;
                 let criteriaNames: string[] = [];
 
                 if (mode === 'DETAIL') {
-                    data.forEach(row => {
+                    filteredData.forEach(row => {
                         if (row.evaluations && row.evaluations.length > 0) {
                             row.evaluations.forEach((ev: any) => {
                                 if (ev.criterionScores && ev.criterionScores.length > maxCriteria) {
@@ -73,7 +93,7 @@ export default function PDFExportResults({ data }: PDFExportProps) {
 
                 const tableBody: any[] = [];
 
-                data.forEach((row, index) => {
+                filteredData.forEach((row, index) => {
                     const position = index + 1;
                     const participant = `${row.participantName}\n(${row.alias})`;
                     const techSpecs = `${row.resolution || '-'}\n${row.fps}fps | ${row.duration}s`;
@@ -232,7 +252,7 @@ export default function PDFExportResults({ data }: PDFExportProps) {
                     }
                 });
 
-                doc.save(`Santa3D_Resultados_${mode}_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
+                doc.save(`Santa3D_Resultados_${mode}_${filenameLabel}_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
 
             } catch (error) {
                 console.error("PDF Error", error);
@@ -262,7 +282,35 @@ export default function PDFExportResults({ data }: PDFExportProps) {
 
             {/* DROPDOWN MENU */}
             {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 origin-top-right bg-white rounded-md shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-72 origin-top-right bg-white rounded-md shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-in fade-in zoom-in-95 duration-100 flex flex-col">
+
+                    {/* PARTICIPANT SELECTOR HEADER */}
+                    <div className="bg-gray-50 p-2 border-b border-gray-100 rounded-t-lg">
+                        <div className="text-xs font-bold text-gray-500 uppercase px-2 mb-1">Filtrar por:</div>
+                        <div className="max-h-40 overflow-y-auto custom-scrollbar border border-gray-200 rounded bg-white">
+                            {/* Option ALL */}
+                            <div
+                                onClick={() => setSelectedId('ALL')}
+                                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 flex items-center justify-between ${selectedId === 'ALL' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700'}`}
+                            >
+                                <span>TODOS (Reporte General)</span>
+                                {selectedId === 'ALL' && <Check size={14} />}
+                            </div>
+
+                            {/* Participants List */}
+                            {data.sort((a, b) => a.participantName.localeCompare(b.participantName)).map(p => (
+                                <div
+                                    key={p.id}
+                                    onClick={() => setSelectedId(p.id)}
+                                    className={`px-3 py-2 text-xs cursor-pointer hover:bg-blue-50 flex items-center justify-between border-t border-gray-50 ${selectedId === p.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-600'}`}
+                                >
+                                    <span className="truncate">{p.participantName}</span>
+                                    {selectedId === p.id && <Check size={12} />}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="p-1">
                         <button
                             onClick={() => generatePDF('SUMMARY')}
@@ -272,7 +320,9 @@ export default function PDFExportResults({ data }: PDFExportProps) {
                                 <span className="font-bold flex items-center gap-2 text-gray-900">
                                     RESUMEN EJECUTIVO
                                 </span>
-                                <span className="text-xs text-gray-500">Tabla general. Ideal para compartir.</span>
+                                <span className="text-xs text-gray-500">
+                                    {selectedId === 'ALL' ? 'Tabla general completa' : 'Resumen para este participante'}
+                                </span>
                             </div>
                         </button>
                         <div className="h-px bg-gray-100 my-1"></div>
@@ -284,7 +334,9 @@ export default function PDFExportResults({ data }: PDFExportProps) {
                                 <span className="font-bold flex items-center gap-2 text-blue-600">
                                     REPORTE DETALLADO
                                 </span>
-                                <span className="text-xs text-gray-500">Incluye desglose por criterios y comentarios.</span>
+                                <span className="text-xs text-gray-500">
+                                    {selectedId === 'ALL' ? 'Todos con desglose completo' : 'Desglose detallado del participante'}
+                                </span>
                             </div>
                         </button>
                     </div>
