@@ -1,0 +1,172 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+model Participant {
+  id               String    @id @default(cuid())
+  nombre           String
+  apellido         String
+  alias            String
+  email            String    @unique
+  telefono         String
+  instagram        String
+  fechaNacimiento  DateTime
+  edad             Int       @default(0)
+  aceptaTerminos   Boolean   @default(false)
+  sigueCuenta      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  video            Video?
+  @@index([email])
+  @@map("participants")
+}
+enum VideoStatus {
+  PENDING_UPLOAD
+  PENDING_VALIDATION
+  VALIDATED
+  REJECTED
+}
+model Video {
+  id                 String      @id @default(cuid())
+  participantId      String      @unique
+  fileName           String
+  storageKey         String
+  url                String?     @db.Text
+  format             String?
+  fileSize           Int
+  fps                Int?        
+  
+  // CAMPOS DE PRODUCCIÓN (RECUPERADOS)
+  closingLikes       Int?
+  closingLikesAt     DateTime?   // NUEVO: Agregado para soportar likes-closing
+  duration           Float?
+  isJudgeSelected    Boolean     @default(false)
+  resolution         String?
+  status             VideoStatus @default(PENDING_UPLOAD)
+  validationResult   Json?
+  rejectionReason    String?
+  uploadedAt         DateTime    @default(now())
+  validatedAt        DateTime?
+  instagramUrl       String?
+  instagramLikes     Int         @default(0)
+  lastInstagramSync  DateTime?
+  participant        Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  evaluations        Evaluation[]
+  @@index([participantId])
+  @@index([status])
+  @@map("videos")
+}
+model Judge {
+  id          String       @id @default(cuid())
+  nombre      String
+  apellido    String?
+  profesion   String?
+  biografia   String?      @db.Text
+  fotoUrl     String?      @db.Text
+  email       String       @unique
+  telefono    String?
+  instagram   String?
+  password    String?
+  role        String       @default("JUDGE")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  isDefaultPassword Boolean @default(true)
+  resetRequested    Boolean @default(false)
+  evaluations Evaluation[]
+  @@index([email])
+  @@map("judges")
+}
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  severity    String   @default("INFO")
+  issuer      String?
+  ipAddress   String?
+  userAgent   String?
+  targetId    String?
+  targetEmail String?
+  targetName  String?
+  details     String?
+  createdAt   DateTime @default(now())
+  @@index([action])
+  @@index([severity])
+  @@map("audit_logs")
+}
+model EvaluationCriterion {
+  id            String           @id @default(cuid())
+  nombre        String
+  descripcion   String?
+  peso          Float
+  puntajeMaximo Float            @default(20.0)
+  orden         Int
+  createdAt     DateTime         @default(now())
+  criterionScores CriterionScore[]
+  @@index([orden])
+  @@map("evaluation_criteria")
+}
+model Evaluation {
+  id                      String   @id @default(cuid())
+  videoId                 String
+  judgeId                 String
+  observacionesGenerales  String?
+  puntajeTotal            Float
+  evaluatedAt             DateTime @default(now())
+  video                   Video             @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  judge                   Judge             @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  criterionScores         CriterionScore[]
+  @@unique([videoId, judgeId])
+  @@index([videoId])
+  @@index([judgeId])
+  @@map("evaluations")
+}
+model CriterionScore {
+  id            String              @id @default(cuid())
+  evaluationId  String
+  criterionId   String
+  puntaje       Float
+  observaciones String?
+  evaluation    Evaluation          @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criterion     EvaluationCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  @@unique([evaluationId, criterionId])
+  @@index([evaluationId])
+  @@map("criterion_scores")
+}
+model Admin {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  @@index([email])
+  @@map("admins")
+}
+model ContestSetting {
+  id                  String   @id @default(cuid())
+  key                 String   @unique
+  value               String
+  updatedAt           DateTime @updatedAt
+  @@map("contest_settings")
+}
+
+model InstagramConfig {
+  id                      Int      @id @default(autoincrement())
+  storyHours              String   @default("08:00,20:00")
+  feedHours               String   @default("12:00")
+  participationMsgs       String   @db.Text
+  votingMsgs              String   @db.Text
+  restrictToOfficialGrid  Boolean  @default(true)
+  designMode              String   @default("auto") // "auto" | "custom"
+  customStoryBg           String?  @db.Text
+  customFeedBg            String?  @db.Text
+  timerFormat             String?  @default("d-h")
+  updatedAt               DateTime @updatedAt
+  
+  @@map("instagram_configs")
+}
+
+
