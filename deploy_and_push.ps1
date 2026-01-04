@@ -52,7 +52,7 @@ try {
 Write-Host "`n🏗️ PASO 4: CONSTRUYENDO Y REINICIANDO (SERVER)..." -ForegroundColor Yellow
 try {
     # Comando remoto: Descomprimir, Instalar dependencias (por si acaso), Build, Reload
-    $RemoteCommand = "cd /var/www/santa3d && tar -xzf deploy_full_update.tar.gz && export PATH=`$PATH:/root/.nvm/versions/node/v20.10.0/bin && npm install --production && npm run build && pm2 reload all"
+    $RemoteCommand = "cd /var/www/santa3d && tar -xzf deploy_full_update.tar.gz && export PATH=`$PATH:/root/.nvm/versions/node/v20.10.0/bin && export NODE_OPTIONS='--max-old-space-size=4096' && npm install --legacy-peer-deps && npm run build && pm2 reload all"
     
     ssh -i santa3d_key -o StrictHostKeyChecking=no root@167.172.217.151 $RemoteCommand
     Write-Host "✅ DESPLIEGUE COMPLETADO EXITOSAMENTE." -ForegroundColor Green
