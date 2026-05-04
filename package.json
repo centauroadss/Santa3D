@@ -17,6 +17,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
     "@aws-sdk/client-s3": "^3.956.0",
     "@aws-sdk/s3-request-presigner": "^3.956.0",
     "@hookform/resolvers": "^3.9.1",
@@ -27,6 +28,7 @@
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "canvas": "^3.2.0",
+    "cheerio": "^1.0.0-rc.12",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
