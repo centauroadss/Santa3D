@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,48 +11,41 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('[BCV Scraper] Iniciando extracción...');
+    console.log('[BCV API] Iniciando extracción usando DolarAPI...');
     
-    // BCV website is notoriously slow and sometimes blocks standard axios User-Agents
-    const response = await axios.get('https://www.bcv.org.ve/', {
-      timeout: 15000,
+    // Using ve.dolarapi.com which provides a clean JSON API for the official BCV rate
+    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
+      method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+        'Accept': 'application/json'
+      },
+      // Short timeout to avoid hanging the route
+      signal: AbortSignal.timeout(10000)
     });
 
-    const $ = cheerio.load(response.data);
-    const usdText = $('#dolar strong').text().trim();
-    
-    if (!usdText) {
-      throw new Error('No se pudo extraer el texto del div #dolar strong');
+    if (!response.ok) {
+      throw new Error(`DolarAPI respondió con status: ${response.status}`);
     }
 
-    // El BCV usa coma para decimales (ej. 36,1234)
-    const usdValue = parseFloat(usdText.replace(',', '.'));
+    const data = await response.json();
     
-    if (isNaN(usdValue)) {
-      throw new Error(`El valor extraído no es un número válido: ${usdText}`);
+    // data.promedio contains the official rate
+    const usdValue = data.promedio;
+    
+    if (typeof usdValue !== 'number' || isNaN(usdValue)) {
+      throw new Error(`El valor extraído no es un número válido: ${JSON.stringify(data)}`);
     }
 
-    // EXTRAER LA "FECHA VALOR" OFICIAL DEL BCV
-    // La fecha está en un span con clase date-display-single, ej: Lunes, 04 Mayo 2026
-    const fechaText = $('.date-display-single').text().trim();
-    const contentAttr = $('.date-display-single').attr('content'); // ej: "2026-05-04T00:00:00-04:00"
-    
-    let fechaOficial = new Date(); // Fallback
-    
-    if (contentAttr) {
-        fechaOficial = new Date(contentAttr);
-    } else if (fechaText) {
-        // Fallback: parsear "Lunes, 04 Mayo 2026"
-        // (Simplificado, idealmente contentAttr siempre existe)
+    // EXTRAER LA "FECHA VALOR"
+    let fechaOficial = new Date();
+    if (data.fechaActualizacion) {
+      fechaOficial = new Date(data.fechaActualizacion);
     }
     
     // Forzamos la hora a medianoche UTC para mantener consistencia en la BD
     fechaOficial.setUTCHours(0, 0, 0, 0);
 
-    console.log(`[BCV Scraper] Tasa USD: ${usdValue} | Fecha Valor: ${fechaOficial.toISOString()}`);
+    console.log(`[BCV API] Tasa USD: ${usdValue} | Fecha Valor: ${fechaOficial.toISOString()}`);
 
     const record = await prisma.tasaBcvHistorico.upsert({
       where: {
@@ -64,16 +53,16 @@ export async function GET(request: Request) {
       },
       update: {
         tasaUsdBs: usdValue,
-        fuenteUrl: 'https://www.bcv.org.ve/'
+        fuenteUrl: 'https://ve.dolarapi.com/v1/dolares/oficial'
       },
       create: {
         fecha: fechaOficial,
         tasaUsdBs: usdValue,
-        fuenteUrl: 'https://www.bcv.org.ve/'
+        fuenteUrl: 'https://ve.dolarapi.com/v1/dolares/oficial'
       }
     });
 
-    console.log('[BCV Scraper] Registro guardado:', record);
+    console.log('[BCV API] Registro guardado:', record);
 
     return NextResponse.json({
       success: true,
@@ -81,7 +70,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error: any) {
-    console.error('[BCV Scraper] Error:', error.message);
+    console.error('[BCV API] Error:', error.message);
     return NextResponse.json({
       success: false,
       error: error.message
