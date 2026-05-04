@@ -58,4 +58,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Note: EasyPanel handles the environment variables injection at runtime
-CMD ["npm", "start", "--", "-H", "0.0.0.0"]
+CMD ["node", "server.js"]
