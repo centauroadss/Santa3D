@@ -48,6 +48,11 @@ const SYNC_INTERVAL_MS = 30000; // 30 seconds
 
 async function performThrottledSync() {
     try {
+        if (!process.env.IG_ACCESS_TOKEN || !process.env.IG_USER_ID) {
+            console.warn('⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.');
+            return;
+        }
+
         const setting = await prisma.contestSetting.findUnique({
             where: { key: 'last_instagram_sync' }
         });
