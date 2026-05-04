@@ -1,4 +1,6 @@
 // BCV Scraper - Extrae la tasa USD/Bs del Banco Central de Venezuela
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Ignorar certificados SSL inválidos del BCV
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 

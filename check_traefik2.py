@@ -9,7 +9,6 @@ client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 client.connect(host, username=user, password=password, timeout=10)
 
 stdin, stdout, stderr = client.exec_command('docker exec $(docker ps -q -f name=project_copa2026.1 -l) node scripts/bcv-scraper.js')
-with open('email-out.txt', 'w', encoding='utf-8') as f:
-    f.write("BCV:\\n")
-    f.write(stdout.read().decode('utf-8', errors='ignore') + "\\n")
-    f.write(stderr.read().decode('utf-8', errors='ignore') + "\\n")
+print("BCV SCRAPER:")
+print(stdout.read().decode('utf-8', errors='ignore'))
+print(stderr.read().decode('utf-8', errors='ignore'))
