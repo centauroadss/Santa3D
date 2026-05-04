@@ -1,43 +1,42 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import dotenv from 'dotenv';
-dotenv.config();
 
-const client = new S3Client({
-    region: 'nyc3', // default or extract from endpoint
-    endpoint: process.env.DO_SPACES_ENDPOINT,
+const spacesEndpoint = 'https://nyc3.digitaloceanspaces.com';
+
+const s3Client = new S3Client({
+    endpoint: spacesEndpoint,
+    forcePathStyle: false,
+    region: 'nyc3',
     credentials: {
-        accessKeyId: process.env.DO_SPACES_KEY || '',
-        secretAccessKey: process.env.DO_SPACES_SECRET || '',
+        accessKeyId: 'DO00VLJHG7EHCG2CN8DK',
+        secretAccessKey: 'a0g4xYxdmx/6azhes5vZy3kVqZqGaeZGnfgCADhtQU4'
     }
 });
 
-async function main() {
-    const buckets = [
-        process.env.DO_SPACES_BUCKET_COMPROBANTES,
-        process.env.DO_SPACES_BUCKET_VIDEOS
-    ];
+async function testUpload() {
+    try {
+        console.log('Probando subida a copa2026-comprobantes...');
+        await s3Client.send(new PutObjectCommand({
+            Bucket: 'copa2026-comprobantes',
+            Key: 'test-file.txt',
+            Body: 'Contenido de prueba de conexion a DigitalOcean Spaces',
+            ACL: 'private',
+            ContentType: 'text/plain'
+        }));
+        console.log('✅ EXITO: Archivo de prueba subido a copa2026-comprobantes');
 
-    console.log(`Endpoint: ${process.env.DO_SPACES_ENDPOINT}`);
-
-    for (const bucket of buckets) {
-        if (!bucket) {
-            console.error('Bucket not defined in env.');
-            continue;
-        }
-        console.log(`Uploading to bucket: ${bucket}`);
-        try {
-            const cmd = new PutObjectCommand({
-                Bucket: bucket,
-                Key: 'test-upload.txt',
-                Body: 'Test file from Copa2026',
-                ACL: 'private'
-            });
-            await client.send(cmd);
-            console.log(`✅ Upload OK for ${bucket}`);
-        } catch (e) {
-            console.error(`❌ Error uploading to ${bucket}:`, e);
-        }
+        console.log('Probando subida a copa2026-videos...');
+        await s3Client.send(new PutObjectCommand({
+            Bucket: 'copa2026-videos',
+            Key: 'test-video.txt',
+            Body: 'Contenido de prueba de conexion a DigitalOcean Spaces',
+            ACL: 'private',
+            ContentType: 'text/plain'
+        }));
+        console.log('✅ EXITO: Archivo de prueba subido a copa2026-videos');
+        
+    } catch (error) {
+        console.error('❌ ERROR en la subida:', error);
     }
 }
 
-main();
+testUpload();
