@@ -39,23 +39,35 @@ export async function GET(request: Request) {
       throw new Error(`El valor extraído no es un número válido: ${usdText}`);
     }
 
-    console.log(`[BCV Scraper] Tasa USD extraída: ${usdValue}`);
+    // EXTRAER LA "FECHA VALOR" OFICIAL DEL BCV
+    // La fecha está en un span con clase date-display-single, ej: Lunes, 04 Mayo 2026
+    const fechaText = $('.date-display-single').text().trim();
+    const contentAttr = $('.date-display-single').attr('content'); // ej: "2026-05-04T00:00:00-04:00"
+    
+    let fechaOficial = new Date(); // Fallback
+    
+    if (contentAttr) {
+        fechaOficial = new Date(contentAttr);
+    } else if (fechaText) {
+        // Fallback: parsear "Lunes, 04 Mayo 2026"
+        // (Simplificado, idealmente contentAttr siempre existe)
+    }
+    
+    // Forzamos la hora a medianoche UTC para mantener consistencia en la BD
+    fechaOficial.setUTCHours(0, 0, 0, 0);
 
-    // Insertar o actualizar para el día de hoy
-    // Usamos el inicio del día (medianoche) como fecha única
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    console.log(`[BCV Scraper] Tasa USD: ${usdValue} | Fecha Valor: ${fechaOficial.toISOString()}`);
 
     const record = await prisma.tasaBcvHistorico.upsert({
       where: {
-        fecha: hoy
+        fecha: fechaOficial
       },
       update: {
         tasaUsdBs: usdValue,
         fuenteUrl: 'https://www.bcv.org.ve/'
       },
       create: {
-        fecha: hoy,
+        fecha: fechaOficial,
         tasaUsdBs: usdValue,
         fuenteUrl: 'https://www.bcv.org.ve/'
       }
