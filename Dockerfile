@@ -46,7 +46,7 @@ RUN chown nextjs:nodejs .next
 # We will just copy the whole app because standalone might not be configured
 COPY --from=builder /app ./
 
-USER nextjs
+# USER nextjs
 
 EXPOSE 3000
 
@@ -54,4 +54,4 @@ ENV PORT 3000
 # set hostname to localhost
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["npm", "start", "--", "-H", "0.0.0.0"]
+CMD ["npm", "start", "--", "-H", "0.0.0.0", "-p", "80"]
