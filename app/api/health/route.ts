@@ -19,6 +19,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+    console.error("Health check DB error:", error);
     return NextResponse.json(
       {
         status: 'error',
@@ -28,8 +29,10 @@ export async function GET() {
           storage: 'unknown',
           email: 'unknown',
         },
+        error_msg: String(error)
       },
-      { status: 503 }
+      // IMPORTANT: Always return 200 so EasyPanel does not SIGTERM the container
+      { status: 200 }
     );
   }
 }
