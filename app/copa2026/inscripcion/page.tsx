@@ -4,8 +4,7 @@ import { getTasaDelDia } from '@/lib/copa2026/bcv';
 
 const prisma = new PrismaClient();
 
-// Revalidate short to get the latest BCV rate
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function InscripcionPage() {
     // Obtener la tasa del BCV más reciente

@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 const prisma = new PrismaClient();
 
-export const revalidate = 60; // Revalidate every minute
+export const dynamic = 'force-dynamic';
 
 export default async function Copa2026Landing() {
     // Check if there are any approved videos to enable the voting button
