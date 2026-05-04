@@ -22,11 +22,11 @@ async function main() {
   // ============================================
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.admin.upsert({
-    where: { email: 'admin@centauroads.com' },
+    where: { email: 'centauroadss@gmail.com' },
     update: {},
     create: {
       nombre: 'Administrador Centauro',
-      email: 'admin@centauroads.com',
+      email: 'centauroadss@gmail.com',
       password: adminPassword,
       role: 'ADMIN',
     },
@@ -214,7 +214,7 @@ async function main() {
   console.log('📝 Credenciales creadas:');
   console.log('');
   console.log('👨‍💼 ADMIN:');
-  console.log('   Email: admin@centauroads.com');
+  console.log('   Email: centauroadss@gmail.com');
   console.log('   Password: admin123');
   console.log('');
   console.log('👨‍⚖️ JUECES:');
