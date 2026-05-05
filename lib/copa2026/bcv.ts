@@ -23,6 +23,7 @@ export async function getTasaDelDia(): Promise<number> {
 
         let usdValue: number | null = null;
         let fuenteUrl = '';
+        let fechaVigencia = hoyCaracas;
 
         // API 1: DolarAPI (Highly reliable JSON endpoint for official BCV rate)
         try {
@@ -36,7 +37,14 @@ export async function getTasaDelDia(): Promise<number> {
                 if (data.promedio && !isNaN(data.promedio)) {
                     usdValue = data.promedio;
                     fuenteUrl = 'https://ve.dolarapi.com/v1/dolares/oficial';
-                    console.log(`[BCV API] Obtenido exitosamente de DolarAPI: ${usdValue}`);
+                    
+                    // Extraer la fecha oficial de vigencia reportada por el BCV
+                    if (data.fechaActualizacion) {
+                        const parsedDate = new Date(data.fechaActualizacion);
+                        parsedDate.setUTCHours(0, 0, 0, 0);
+                        fechaVigencia = parsedDate;
+                    }
+                    console.log(`[BCV API] Obtenido exitosamente de DolarAPI: ${usdValue}. Fecha Vigencia: ${fechaVigencia.toISOString()}`);
                 }
             }
         } catch (e: any) {
@@ -61,6 +69,7 @@ export async function getTasaDelDia(): Promise<number> {
                             if (!isNaN(parsedVal)) {
                                 usdValue = parsedVal;
                                 fuenteUrl = 'https://www.bcv.org.ve (vía proxy)';
+                                fechaVigencia = hoyCaracas;
                                 console.log(`[BCV API] Obtenido exitosamente mediante Scraping Proxy: ${usdValue}`);
                             }
                         }
@@ -71,13 +80,26 @@ export async function getTasaDelDia(): Promise<number> {
             }
         }
 
-        // 3. Save to database for future fast requests
+        // 3. Save to database for future fast requests using the exact fechaVigencia
         if (usdValue) {
              await prisma.tasaBcvHistorico.upsert({
-                 where: { fecha: hoyCaracas },
+                 where: { fecha: fechaVigencia },
                  update: { tasaUsdBs: usdValue, fuenteUrl },
-                 create: { fecha: hoyCaracas, tasaUsdBs: usdValue, fuenteUrl }
+                 create: { fecha: fechaVigencia, tasaUsdBs: usdValue, fuenteUrl }
              });
+             
+             // Si la tasa extraída es PARA MAÑANA, significa que hoyCaracas no está en la base de datos.
+             // Pero la función getTasaDelDia() está diseñada para retornar la tasa de HOY.
+             // Así que, después de guardar, debemos verificar qué retornamos al cliente.
+             
+             if (fechaVigencia.getTime() > hoyCaracas.getTime()) {
+                 // Si la API devolvió la tasa de mañana, retornamos la última tasa vigente (hasta que den las 12 AM)
+                 if (ultimaTasa) {
+                     console.log(`[BCV API] La API devolvió la tasa de mañana (${fechaVigencia.toISOString()}). Retornando la tasa de hoy (${ultimaTasa.fecha.toISOString()}) para el usuario.`);
+                     return Number(ultimaTasa.tasaUsdBs);
+                 }
+             }
+
              return Number(usdValue);
         }
 
