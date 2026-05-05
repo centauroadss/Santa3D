@@ -1,71 +1,91 @@
-import Anthropic from '@anthropic-ai/sdk';
-
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import Tesseract from 'tesseract.js';
 
 /**
- * Llama a Claude Vision para extraer el monto total en bolívares de un comprobante de pago.
+ * Llama a Tesseract.js (motor OCR local y open-source) para extraer el monto en bolívares de un comprobante de pago.
+ * Utiliza heurística y expresiones regulares para aislar el monto, priorizando aquel que coincida con el esperado.
+ * 
  * @param base64Image Imagen en formato base64 (sin el prefijo data:image/jpeg;base64,)
  * @param mediaType Tipo MIME de la imagen (e.g., 'image/jpeg', 'image/png')
+ * @param montoEsperado El monto calculado que deberíamos encontrar (con cierta tolerancia)
  * @returns El monto extraído como número, o lanza un error si no se pudo determinar.
  */
-export async function extractMontoFromCapture(base64Image: string, mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp"): Promise<number> {
-    if (!process.env.ANTHROPIC_API_KEY) {
-        throw new Error('ANTHROPIC_API_KEY no está configurada.');
-    }
-
+export async function extractMontoFromCapture(
+    base64Image: string, 
+    mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+    montoEsperado?: number
+): Promise<number> {
     try {
-        const response = await anthropic.messages.create({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 100,
-            temperature: 0,
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        {
-                            type: 'image',
-                            source: {
-                                type: 'base64',
-                                media_type: mediaType,
-                                data: base64Image,
-                            },
-                        },
-                        {
-                            type: 'text',
-                            text: 'Extrae únicamente el monto total en bolívares de este comprobante de pago móvil venezolano. Responde solo con el número usando punto como separador decimal si aplica (ejemplo: 150.50). No incluyas símbolos de moneda, letras, ni separadores de miles. Si la imagen no es un comprobante legible o no se ve el monto, responde exactamente la palabra "ERROR".',
-                        }
-                    ],
-                }
-            ],
-        });
-
-        const rawText = response.content[0].type === 'text' ? response.content[0].text.trim() : 'ERROR';
+        const buffer = Buffer.from(base64Image, 'base64');
         
-        if (rawText === 'ERROR') {
-            throw new Error('La imagen no es un comprobante legible o no se pudo extraer el monto.');
+        // 1. Extraer texto crudo de la imagen usando Tesseract
+        // Se carga el paquete en inglés y español para mejorar el reconocimiento de números y "Bs"
+        const { data: { text } } = await Tesseract.recognize(
+            buffer,
+            'spa+eng',
+            { logger: m => console.log(`[Tesseract OCR] ${m.status} - ${(m.progress * 100).toFixed(2)}%`) }
+        );
+
+        console.log('[Tesseract OCR] Texto en bruto extraído:\n', text);
+
+        // 2. Extraer todos los números que tengan pinta de moneda (ej: 1.500,00 | 1,500.00 | 1500)
+        // La RegEx busca números que puedan tener separadores de miles y decimales
+        const regex = /(?:\b|Bs\.?\s*|Monto:\s*)([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})?)\b/gi;
+        const matches = [...text.matchAll(regex)];
+        const candidatos: number[] = [];
+
+        for (const match of matches) {
+            let numStr = match[1];
+
+            // Normalización del número
+            // Si el número tiene tanto punto como coma, o múltiples de uno de ellos
+            const parts = numStr.split(/[.,]/);
+            if (parts.length > 1) {
+                const lastPart = parts[parts.length - 1];
+                if (lastPart.length <= 2) {
+                    // El último delimitador es decimal
+                    const intPart = parts.slice(0, -1).join('');
+                    numStr = intPart + '.' + lastPart;
+                } else {
+                    // No tiene decimales, todo es entero (ej: 1.500)
+                    numStr = parts.join('');
+                }
+            }
+
+            const parsed = parseFloat(numStr);
+            // Filtros heurísticos: un pago móvil no suele ser mayor a 1,000,000 Bs (por límites del banco)
+            // Ni suele ser menor a 1 Bs. Tampoco queremos números de teléfono (que se traducen en millones grandes)
+            if (!isNaN(parsed) && parsed > 1 && parsed < 500000) {
+                candidatos.push(parsed);
+            }
         }
 
-        // Convertir texto a número de forma segura (e.g. "1.500,50" -> 1500.50 si el modelo se equivocó en el formato)
-        const normalizedText = rawText.replace(/[^0-9,\.]/g, '').replace(',', '.');
-        const lastDotIndex = normalizedText.lastIndexOf('.');
-        let cleanNumberStr = normalizedText;
-        if (lastDotIndex !== -1) {
-             const withoutLastDot = normalizedText.replace(/\./g, '');
-             const adjustedDotIndex = lastDotIndex - (normalizedText.length - withoutLastDot.length) + 1;
-             cleanNumberStr = withoutLastDot.slice(0, adjustedDotIndex) + '.' + withoutLastDot.slice(adjustedDotIndex);
+        console.log('[Tesseract OCR] Números candidatos extraídos:', candidatos);
+
+        if (candidatos.length === 0) {
+            throw new Error('La imagen no es un comprobante legible o no se pudo aislar un monto.');
         }
 
-        const monto = parseFloat(cleanNumberStr);
-
-        if (isNaN(monto)) {
-            throw new Error('No se pudo convertir el valor extraído a número: ' + rawText);
+        // 3. Evaluar el mejor candidato si tenemos un montoEsperado
+        if (montoEsperado && montoEsperado > 0) {
+            // Buscamos un número que esté en un rango de ± 5.00 Bs del esperado
+            const margen = 5.0;
+            const candidatoIdeal = candidatos.find(c => c >= montoEsperado - margen && c <= montoEsperado + margen);
+            
+            if (candidatoIdeal !== undefined) {
+                console.log(`[Tesseract OCR] ¡Monto ideal encontrado!: ${candidatoIdeal}`);
+                return candidatoIdeal;
+            }
         }
 
-        return monto;
+        // Si no tenemos un monto esperado, o no se encontró coincidencia exacta, 
+        // devolvemos el número máximo encontrado (usualmente el TOTAL del pago es el más grande del recibo)
+        // Ignorando números gigantes (teléfonos, referencias) que ya filtramos arriba.
+        const montoMaximo = Math.max(...candidatos);
+        console.log(`[Tesseract OCR] Retornando el mayor candidato válido: ${montoMaximo}`);
+        return montoMaximo;
+
     } catch (error) {
-        console.error('Error en OCR de Anthropic:', error);
+        console.error('Error en OCR de Tesseract.js:', error);
         throw error;
     }
 }

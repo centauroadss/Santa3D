@@ -76,16 +76,16 @@ export async function POST(req: Request) {
 
         const s3Path = `s3://${bucket}/${fileName}`;
 
+        const montoUsd = data.categoria === 'AMBAS' ? 20 : 10;
+        const montoEsperado = data.tasaBcv * montoUsd;
+
         // 4. OCR y Validación de Monto
         let montoOcr = 0;
         try {
-            montoOcr = await extractMontoFromCapture(base64Data, mimeType as any);
+            montoOcr = await extractMontoFromCapture(base64Data, mimeType as any, montoEsperado);
         } catch (error: any) {
             return NextResponse.json({ error: 'No se pudo extraer el monto del comprobante: ' + error.message }, { status: 422 });
         }
-
-        const montoUsd = data.categoria === 'AMBAS' ? 20 : 10;
-        const montoEsperado = data.tasaBcv * montoUsd;
         
         // Tolerancia de 0.50 Bs
         if (montoOcr < (montoEsperado - 0.50)) {
