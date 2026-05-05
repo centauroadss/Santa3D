@@ -3,4 +3,4 @@ HOSTNAME = "0.0.0.0"
 PORT = "3000"
 
 [start]
-cmd = "HOSTNAME=0.0.0.0 node .next/standalone/server.js"
+cmd = "HOSTNAME=0.0.0.0 npm run start"
