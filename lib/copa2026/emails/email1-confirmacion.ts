@@ -14,7 +14,7 @@ export async function sendEmailConfirmacion(props: EmailConfirmacionProps) {
     
     // El dominio base debe configurarse en NEXT_PUBLIC_BASE_URL, si no, fallback
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://copa2026.centauroads.com';
-    const linkUpload = `${baseUrl}/copa2026/upload/${tokenVideo}`;
+    const linkUpload = `${baseUrl}/registro/video/${tokenVideo}`;
     
     // Enmascarar teléfono (mostrar solo últimos 4 dígitos)
     const telMasked = telefonoPago.length >= 4 
@@ -80,10 +80,10 @@ export async function sendEmailConfirmacion(props: EmailConfirmacionProps) {
                 </div>
 
                 <div class="specs">
-                    <strong>Especificaciones Técnicas del Video:</strong>
+                    <strong>Especificaciones Técnicas Estrictas del Video:</strong>
                     <ul>
-                        <li><strong>Resolución:</strong> 1080x1920 (Vertical 9:16)</li>
-                        <li><strong>Duración máxima:</strong> 30 segundos</li>
+                        <li><strong>Resolución:</strong> 1024x2048 píxeles</li>
+                        <li><strong>Duración:</strong> Entre 25 y 30 segundos</li>
                         <li><strong>Framerate:</strong> 30 FPS</li>
                         <li><strong>Formato:</strong> MP4 (H.264)</li>
                         <li><strong>Fecha límite de carga:</strong> 05 de Junio, 2026 (23:59 VET)</li>

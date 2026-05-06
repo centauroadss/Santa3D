@@ -1,154 +1,165 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { prisma } from '@/lib/prisma';
+import { validarComprobanteOcr } from '@/lib/copa2026/ocr';
 import { v4 as uuidv4 } from 'uuid';
-import * as z from 'zod';
-import { extractMontoFromCapture } from '@/lib/copa2026/ocr';
-import { sendEmailConfirmacion } from '@/lib/copa2026/emails/email1-confirmacion';
+import { Resend } from 'resend';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-const prisma = new PrismaClient();
-
+const resend = new Resend(process.env.RESEND_API_KEY || 're_mock');
 const s3Client = new S3Client({
-    endpoint: 'https://nyc3.digitaloceanspaces.com', // DO Spaces endpoint
-    region: 'us-east-1', // DO uses us-east-1 for compatibility
-    credentials: {
-        accessKeyId: process.env.DO_SPACES_KEY || '',
-        secretAccessKey: process.env.DO_SPACES_SECRET || '',
-    }
-});
-
-const payloadSchema = z.object({
-    nombre: z.string(),
-    apellido: z.string(),
-    cedulaIdentidad: z.string(),
-    email: z.string().email(),
-    telefono: z.string(),
-    instagram: z.string(),
-    categoria: z.enum(['RENDER', 'IA', 'AMBAS']),
-    telefonoPago: z.string(),
-    cedulaPago: z.string(),
-    bancoPagoCodigo: z.string(),
-    montoDeclaradoBs: z.string(),
-    comprobanteBase64: z.string(),
-    tasaBcv: z.number(),
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'mock',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'mock',
+  }
 });
 
 export async function POST(req: Request) {
-    try {
-        const body = await req.json();
-        const data = payloadSchema.parse(body);
+  try {
+    const formData = await req.formData();
+    
+    const nombre = formData.get('nombre') as string;
+    const apellido = formData.get('apellido') as string;
+    const cedulaIdentidad = formData.get('cedulaIdentidad') as string;
+    const email = formData.get('email') as string;
+    const telefono = formData.get('telefono') as string;
+    const categoria = formData.get('categoria') as 'RENDER' | 'IA' | 'AMBAS';
+    
+    const telefonoPago = formData.get('telefonoPago') as string;
+    const cedulaPago = formData.get('cedulaPago') as string;
+    const bancoOrigen = formData.get('bancoOrigen') as string;
+    const referencia = formData.get('referencia') as string;
+    const comprobanteFile = formData.get('comprobanteFile') as File;
 
-        // 1. Validar unicidad (Email + Categoría y Cédula + Categoría)
-        const existeInscripcion = await prisma.inscripcionCopa2026.findFirst({
-            where: {
-                OR: [
-                    { email: data.email, categoria: data.categoria },
-                    { cedulaIdentidad: data.cedulaIdentidad, categoria: data.categoria }
-                ]
-            }
-        });
-
-        if (existeInscripcion) {
-            return NextResponse.json({ error: 'Ya existe una inscripción con este email o cédula en esta categoría.' }, { status: 409 });
-        }
-
-        // 2. Extraer MIME type y data limpia del base64
-        const matches = data.comprobanteBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (!matches || matches.length !== 3) {
-            return NextResponse.json({ error: 'Formato de imagen inválido' }, { status: 400 });
-        }
-        const mimeType = matches[1];
-        const base64Data = matches[2];
-
-        // 3. Subir a DigitalOcean Spaces
-        const bucket = process.env.DO_SPACES_BUCKET_COMPROBANTES || 'copa2026-comprobantes';
-        const fileExtension = mimeType.split('/')[1] || 'jpg';
-        const fileName = `comprobantes/${Date.now()}_${uuidv4()}.${fileExtension}`;
-        const buffer = Buffer.from(base64Data, 'base64');
-
-        await s3Client.send(new PutObjectCommand({
-            Bucket: bucket,
-            Key: fileName,
-            Body: buffer,
-            ACL: 'private',
-            ContentType: mimeType,
-        }));
-
-        const s3Path = `s3://${bucket}/${fileName}`;
-
-        const montoUsd = data.categoria === 'AMBAS' ? 20 : 10;
-        const montoEsperado = data.tasaBcv * montoUsd;
-
-        // 4. OCR y Validación de Monto
-        let montoOcr = 0;
-        try {
-            montoOcr = await extractMontoFromCapture(base64Data, mimeType as any, montoEsperado);
-        } catch (error: any) {
-            return NextResponse.json({ error: 'No se pudo extraer el monto del comprobante: ' + error.message }, { status: 422 });
-        }
-        
-        // Tolerancia de 0.50 Bs
-        if (montoOcr < (montoEsperado - 0.50)) {
-            return NextResponse.json({ 
-                error: `El monto del comprobante (Bs. ${montoOcr}) es menor al monto requerido (Bs. ${montoEsperado.toFixed(2)}).` 
-            }, { status: 400 });
-        }
-
-        // 5. Crear Inscripción y PagoMovil
-        // Expiry Date: 2026-06-05T23:59:00-04:00 (VET)
-        const expiryDate = new Date('2026-06-06T03:59:00.000Z'); // UTC equivalent
-        const tokenVideo = uuidv4();
-
-        const inscripcion = await prisma.inscripcionCopa2026.create({
-            data: {
-                nombre: data.nombre,
-                apellido: data.apellido,
-                cedulaIdentidad: data.cedulaIdentidad,
-                email: data.email,
-                telefono: data.telefono,
-                instagram: data.instagram,
-                categoria: data.categoria,
-                tokenVideo: tokenVideo,
-                tokenExpiry: expiryDate,
-                estatusInscripcion: 'APROBADO',
-                pago: {
-                    create: {
-                        bancoOrigenCodigo: data.bancoPagoCodigo,
-                        telefonoPago: data.telefonoPago,
-                        referencia: 'Generada', // To be filled/extracted if needed later
-                        montoCapturadoBs: montoOcr,
-                        montoEsperadoBs: montoEsperado,
-                        tasaBcvUsada: data.tasaBcv,
-                        comprobantePath: s3Path,
-                        estatusPago: 'VALIDADO',
-                        ocrConfianza: 1.0,
-                    }
-                }
-            }
-        });
-
-        // 6. Enviar Email de Confirmación
-        try {
-            await sendEmailConfirmacion({
-                nombre: data.nombre,
-                email: data.email,
-                categoria: data.categoria,
-                montoBs: montoOcr,
-                telefonoPago: data.telefonoPago,
-                tokenVideo: tokenVideo
-            });
-        } catch (emailError) {
-            console.error('Error enviando email de confirmación:', emailError);
-            // We don't fail the registration if email fails, but we log it.
-        }
-
-        return NextResponse.json({ success: true, message: 'Inscripción confirmada' });
-
-    } catch (error: any) {
-        console.error('Error en endpoint inscripcion:', error);
-        if (error instanceof z.ZodError) {
-            return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 });
-        }
-        return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    if (!comprobanteFile) {
+      return NextResponse.json({ error: 'Falta el comprobante de pago.' }, { status: 400 });
     }
+
+    // Obtener costos de DB
+    const configs = await prisma.configConcurso.findMany({
+      where: {
+        clave: { in: ['costo_una_categoria', 'costo_ambas_categorias'] }
+      }
+    });
+    const configMap = configs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
+    const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
+    const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
+
+    // Calcular monto esperado
+    const bcvRecord = await prisma.tasaBcvHistorico.findFirst({ orderBy: { fecha: 'desc' } });
+    const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 55.45;
+    const montoUsd = categoria === 'AMBAS' ? costoAmbasCategorias : costoUnaCategoria;
+    const montoEsperadoBs = tasaBcv * montoUsd;
+
+    // Convertir file a base64 para OCR
+    const arrayBuffer = await comprobanteFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString('base64');
+
+    // 1. OCR Validación
+    const ocrResult = await validarComprobanteOcr(base64Image, montoEsperadoBs, referencia);
+    
+    if (!ocrResult.isValid) {
+      return NextResponse.json({ 
+        error: `El OCR no pudo validar el monto de ${montoEsperadoBs.toFixed(2)} Bs en la imagen. Por favor sube un comprobante más claro.`
+      }, { status: 400 });
+    }
+
+    // 2. Subir imagen a S3 (simulado si no hay keys)
+    const fileExt = comprobanteFile.name.split('.').pop();
+    const fileName = `pagos_2026/${Date.now()}-${uuidv4()}.${fileExt}`;
+    
+    if (process.env.AWS_ACCESS_KEY_ID) {
+      await s3Client.send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: fileName,
+        Body: buffer,
+        ContentType: comprobanteFile.type,
+      }));
+    }
+
+    // 3. Crear Inscripción en BD
+    const tokenVideo = uuidv4();
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 30); // 30 días de validez
+
+    const inscripcion = await prisma.inscripcionCopa2026.create({
+      data: {
+        cedulaIdentidad,
+        nombre,
+        apellido,
+        telefono,
+        email,
+        categoria,
+        tokenVideo,
+        tokenExpiry,
+        estatusInscripcion: 'APROBADO', // Se aprueba automático por el OCR
+        pago: {
+          create: {
+            bancoOrigenCodigo: bancoOrigen,
+            telefonoPago,
+            referencia,
+            montoCapturadoBs: ocrResult.montoDetectado || montoEsperadoBs,
+            montoEsperadoBs,
+            tasaBcvUsada: tasaBcv,
+            comprobantePath: fileName,
+            ocrResultadoRaw: ocrResult.rawJson,
+            ocrConfianza: ocrResult.confidence,
+            estatusPago: 'VALIDADO'
+          }
+        }
+      }
+    });
+
+    // 4. Enviar Email
+    const uploadLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://copa2026.centauroads.com'}/copa2026/upload/${tokenVideo}`;
+    
+    let emailSubject = '¡Bienvenido a Copa 2026! Tu inscripción fue exitosa';
+    let emailHtml = `
+      <h1>¡Hola ${nombre}!</h1>
+      <p>Tu inscripción a la categoría ${categoria} ha sido recibida y tu pago validado correctamente.</p>
+      <p>Para subir tu(s) video(s), utiliza el siguiente enlace privado:</p>
+      <a href="${uploadLink}">${uploadLink}</a>
+      <p>Recuerda que el video debe tener una resolución de 1024x2048 y duración máxima de 30s.</p>
+    `;
+
+    // Intentar buscar plantilla en BD
+    try {
+      const template = await prisma.plantillaEmail.findUnique({ where: { tipo: 'BIENVENIDA' } });
+      if (template) {
+        emailSubject = template.asunto;
+        emailHtml = template.contenidoHtml
+          .replace('{{nombre}}', nombre)
+          .replace('{{categoria}}', categoria)
+          .replace('{{token_link}}', uploadLink);
+      }
+    } catch (e) {
+      console.error("No se pudo cargar la plantilla de la BD", e);
+    }
+
+    if (process.env.RESEND_API_KEY) {
+      await resend.emails.send({
+        from: 'Copa 2026 <no-reply@centauroads.com>',
+        to: email,
+        subject: emailSubject,
+        html: emailHtml,
+        attachments: [
+          {
+            filename: `pago_${referencia}.${fileExt}`,
+            content: buffer
+          }
+        ]
+      });
+    }
+
+    return NextResponse.json({ success: true, inscripcionId: inscripcion.id });
+
+  } catch (error: any) {
+    console.error('Error en endpoint inscripcion:', error);
+    // Si hay error de constraint único
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'Ya existe una inscripción con esta cédula/email para esta categoría.' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Error interno procesando la inscripción.' }, { status: 500 });
+  }
 }

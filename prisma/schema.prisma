@@ -234,7 +234,7 @@ model InscripcionCopa2026 {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   pago               PagoMovil?
-  video              VideoCopa2026?
+  videos             VideoCopa2026[]
 
   @@unique([cedulaIdentidad, categoria])
   @@unique([email, categoria])
@@ -251,6 +251,7 @@ model PagoMovil {
   montoCapturadoBs  Decimal             @db.Decimal(12, 2)
   montoEsperadoBs   Decimal             @db.Decimal(12, 2)
   tasaBcvUsada      Decimal             @db.Decimal(10, 4)
+  fechaPagoExtractada DateTime?
   comprobantePath   String              @db.VarChar(500)
   ocrResultadoRaw   Json?
   ocrConfianza      Float?
@@ -262,7 +263,7 @@ model PagoMovil {
 
 model VideoCopa2026 {
   id            Int                 @id @default(autoincrement())
-  inscripcionId Int                 @unique
+  inscripcionId Int
   inscripcion   InscripcionCopa2026 @relation(fields: [inscripcionId], references: [id])
   rutaS3        String              @db.VarChar(500)
   nombreArchivo String              @db.VarChar(255)
@@ -331,4 +332,28 @@ model ConfigConcurso {
   updatedAt   DateTime @updatedAt
 
   @@map("config_concurso")
+}
+
+model PlantillaEmail {
+  id            Int      @id @default(autoincrement())
+  tipo          String   @unique @db.VarChar(50) // BIENVENIDA, VIDEO_RECIBIDO
+  asunto        String   @db.VarChar(255)
+  contenidoHtml String   @db.Text
+  updatedAt     DateTime @updatedAt
+
+  @@map("plantillas_email")
+}
+
+model EmailLog {
+  id          Int      @id @default(autoincrement())
+  resendId    String?  @unique @db.VarChar(100)
+  to          String   @db.VarChar(150)
+  subject     String   @db.VarChar(255)
+  tipo        String   @db.VarChar(50)
+  status      String   @default("ENVIADO") @db.VarChar(20)
+  createdAt   DateTime @default(now())
+  deliveredAt DateTime?
+  openedAt    DateTime?
+
+  @@map("email_logs")
 }

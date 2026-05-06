@@ -1,0 +1,252 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import { Save, Settings } from 'lucide-react';
+
+export default function ConfiguracionAdminPage() {
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
+
+    const [costos, setCostos] = useState({
+        costo_una_categoria: '5',
+        costo_ambas_categorias: '10',
+        pago_banco: '',
+        pago_cedula: '',
+        pago_telefono: ''
+    });
+    
+    const [historico, setHistorico] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetchConfig();
+        fetchHistorico();
+    }, []);
+
+    const fetchConfig = async () => {
+        try {
+            const token = localStorage.getItem('admin_token');
+            const res = await axios.get('/api/admin/configuracion', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                setCostos(res.data.data);
+            } else {
+                setError(res.data.error);
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchHistorico = async () => {
+        try {
+            const token = localStorage.getItem('admin_token');
+            const res = await axios.get('/api/admin/bcv-historico', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                setHistorico(res.data.data);
+            }
+        } catch (err: any) {
+            console.error('Error fetching historico:', err);
+        }
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const token = localStorage.getItem('admin_token');
+            const res = await axios.put('/api/admin/configuracion', costos, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.data.success) {
+                setSuccess('Configuración guardada exitosamente');
+                setTimeout(() => setSuccess(null), 3000);
+                // Refrescar el historial porque los costos en Bs pueden haber cambiado
+                fetchHistorico();
+            } else {
+                setError(res.data.error);
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.error || err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return <div className="text-gray-500">Cargando configuración...</div>;
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6 pb-20">
+            <div className="flex items-center gap-3">
+                <Settings className="w-8 h-8 text-brand-purple" />
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Configuración del Sistema</h1>
+                    <p className="text-gray-500 text-sm">Gestiona los parámetros globales de la Copa 2026</p>
+                </div>
+            </div>
+
+            {error && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200">
+                    {error}
+                </div>
+            )}
+            
+            {success && (
+                <div className="bg-green-50 text-green-600 p-4 rounded-lg border border-green-200">
+                    {success}
+                </div>
+            )}
+
+            <Card className="p-6">
+                <form onSubmit={handleSave} className="space-y-8">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Costos Dinámicos (USD)</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Costo Una Categoría (Render o IA)
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={costos.costo_una_categoria}
+                                        onChange={(e) => setCostos({ ...costos, costo_una_categoria: e.target.value })}
+                                        className="pl-8"
+                                        required
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Precio base en dólares</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Costo Ambas Categorías
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={costos.costo_ambas_categorias}
+                                        onChange={(e) => setCostos({ ...costos, costo_ambas_categorias: e.target.value })}
+                                        className="pl-8"
+                                        required
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Precio promocional por participar en ambas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Receptor de Pago Móvil</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Banco</label>
+                                <Input
+                                    type="text"
+                                    value={costos.pago_banco}
+                                    onChange={(e) => setCostos({ ...costos, pago_banco: e.target.value })}
+                                    placeholder="Ej: Banesco"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Cédula o RIF</label>
+                                <Input
+                                    type="text"
+                                    value={costos.pago_cedula}
+                                    onChange={(e) => setCostos({ ...costos, pago_cedula: e.target.value })}
+                                    placeholder="Ej: J123456789"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Teléfono</label>
+                                <Input
+                                    type="text"
+                                    value={costos.pago_telefono}
+                                    onChange={(e) => setCostos({ ...costos, pago_telefono: e.target.value })}
+                                    placeholder="Ej: 04140000000"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Estos datos se mostrarán en la página de pago como información de la cuenta destino.</p>
+                    </div>
+
+                    <div className="pt-4 flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="bg-brand-purple text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-purple/90 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <Save size={18} />
+                            {saving ? 'Guardando...' : 'Guardar Cambios'}
+                        </button>
+                    </div>
+                </form>
+            </Card>
+
+            <div className="mt-12">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Auditoría: Histórico de Tasas BCV</h2>
+                <Card className="overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
+                                <tr>
+                                    <th className="px-6 py-3 font-bold">Fecha</th>
+                                    <th className="px-6 py-3 font-bold">Tasa Oficial BCV</th>
+                                    <th className="px-6 py-3 font-bold text-brand-purple">1 Categoría (${costos.costo_una_categoria})</th>
+                                    <th className="px-6 py-3 font-bold text-brand-purple">Ambas Categorías (${costos.costo_ambas_categorias})</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {historico.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                                            No hay registros históricos todavía.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    historico.map((item) => (
+                                        <tr key={item.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-3 whitespace-nowrap">
+                                                {new Date(item.fecha).toLocaleDateString('es-VE', {
+                                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                                    hour: '2-digit', minute: '2-digit'
+                                                })}
+                                            </td>
+                                            <td className="px-6 py-3 font-medium">{item.tasaUsdBs} Bs/$</td>
+                                            <td className="px-6 py-3 font-bold">{item.costoUnaCategoriaBs} Bs</td>
+                                            <td className="px-6 py-3 font-bold">{item.costoAmbasCategoriasBs} Bs</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </div>
+        </div>
+    );
+}

@@ -1,107 +1,135 @@
 'use client';
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { InscripcionFormA, FormAValues } from './InscripcionFormA';
-import { InscripcionFormB, FormBValues } from './InscripcionFormB';
+import InscripcionFormA, { FormAData } from './InscripcionFormA';
+import InscripcionFormB, { FormBData } from './InscripcionFormB';
+import axios from 'axios';
+
+type Step = 'A' | 'B';
 
 interface Props {
-    tasaBcv: number;
-    bancos: { codigo: string; nombre: string }[];
-    configPago: { telefono: string; cedula: string; banco: string };
+  tasaBcv: number;
+  costoUnaCategoria: number;
+  costoAmbasCategorias: number;
+  configPago: {
+    banco: string;
+    cedula: string;
+    telefono: string;
+  }
 }
 
-export function InscripcionWizard({ tasaBcv, bancos, configPago }: Props) {
-    const router = useRouter();
-    const [step, setStep] = useState<1 | 2>(1);
-    const [dataA, setDataA] = useState<FormAValues | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export default function InscripcionWizard({ tasaBcv, costoUnaCategoria, costoAmbasCategorias, configPago }: Props) {
+  const router = useRouter();
+  const [step, setStep] = useState<Step>('A');
+  const [formDataA, setFormDataA] = useState<Partial<FormAData>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleNext = (data: FormAValues) => {
-        setDataA(data);
-        setError(null);
-        setStep(2);
-    };
+  const handleFormASubmit = (data: FormAData) => {
+    setFormDataA(data);
+    setStep('B');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-    const handleBack = () => {
-        setStep(1);
-    };
+  const handleFormBSubmit = async (dataB: FormBData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      
+      // Datos Form A
+      Object.entries(formDataA).forEach(([key, value]) => {
+        if (value !== undefined) formData.append(key, value.toString());
+      });
 
-    const handleSubmitFinal = async (dataB: FormBValues) => {
-        if (!dataA) return;
-        setIsSubmitting(true);
-        setError(null);
+      // Datos Form B
+      formData.append('telefonoPago', dataB.telefonoPago);
+      formData.append('cedulaPago', dataB.cedulaPago);
+      formData.append('bancoOrigen', dataB.bancoOrigen);
+      formData.append('referencia', dataB.referencia);
+      formData.append('comprobanteFile', dataB.comprobanteFile);
 
-        try {
-            const payload = {
-                ...dataA,
-                ...dataB,
-                tasaBcv,
-            };
+      // Llamada real a la API (Fase Backend)
+      await axios.post('/api/copa2026/inscripcion', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      // Redirigir a pantalla de confirmación
+      router.push('/copa2026/inscripcion/confirmacion');
+      
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Ocurrió un error al procesar tu inscripción. Intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-            const response = await fetch('/api/copa2026/inscripcion', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Error al procesar la inscripción');
-            }
-
-            // Redirigir a pantalla de confirmación
-            // Guardar algunos datos en sessionStorage si queremos mostrarlos en la confirmación
-            sessionStorage.setItem('copa2026_confirm_email', dataA.email);
-            sessionStorage.setItem('copa2026_confirm_nombre', dataA.nombre);
-            sessionStorage.setItem('copa2026_confirm_categoria', dataA.categoria);
-            sessionStorage.setItem('copa2026_confirm_monto', dataB.montoDeclaradoBs);
-
-            router.push('/copa2026/inscripcion/confirmacion');
-
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const montoUsd = dataA?.categoria === 'AMBAS' ? 20 : 10;
-
-    return (
-        <div className="max-w-3xl mx-auto w-full bg-[#0a0a0a] border border-[#222] p-6 md:p-10 rounded-3xl shadow-2xl relative overflow-hidden">
-            {/* Steps indicator */}
-            <div className="flex gap-2 mb-8">
-                <div className={`h-2 flex-1 rounded-full ${step >= 1 ? 'bg-red-500' : 'bg-neutral-800'}`}></div>
-                <div className={`h-2 flex-1 rounded-full ${step >= 2 ? 'bg-red-500' : 'bg-neutral-800'}`}></div>
-            </div>
-
-            {error && (
-                <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/50 text-red-500 text-sm">
-                    {error}
-                </div>
-            )}
-
-            {step === 1 && (
-                <InscripcionFormA 
-                    onNext={handleNext} 
-                    defaultValues={dataA || undefined} 
-                />
-            )}
-
-            {step === 2 && dataA && (
-                <InscripcionFormB
-                    tasaBcv={tasaBcv}
-                    montoUsd={montoUsd}
-                    bancos={bancos}
-                    configPago={configPago}
-                    onBack={handleBack}
-                    onSubmit={handleSubmitFinal}
-                    isSubmitting={isSubmitting}
-                />
-            )}
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* Progress Bar */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between relative">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-[#222] -z-10 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-brand-purple transition-all duration-500"
+              style={{ width: step === 'A' ? '50%' : '100%' }}
+            />
+          </div>
+          
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+            step === 'A' || step === 'B' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/50' : 'bg-[#222] text-gray-500'
+          }`}>
+            1
+          </div>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+            step === 'B' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/50' : 'bg-[#222] text-gray-500'
+          }`}>
+            2
+          </div>
         </div>
-    );
+        <div className="flex justify-between text-xs font-bold text-gray-500 uppercase mt-2 px-1">
+          <span className={step === 'A' || step === 'B' ? 'text-brand-purple' : ''}>Tus Datos</span>
+          <span className={step === 'B' ? 'text-brand-purple' : ''}>Validación de Pago</span>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 text-sm text-center font-medium">
+          {error}
+        </div>
+      )}
+
+      {/* Forms Content */}
+      <div className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden">
+        {step === 'A' && (
+          <div className="animate-in slide-in-from-left fade-in duration-300">
+            <InscripcionFormA 
+              initialData={formDataA} 
+              onSubmit={handleFormASubmit} 
+            />
+          </div>
+        )}
+        
+        {step === 'B' && (
+          <div className="animate-in slide-in-from-right fade-in duration-300">
+            <InscripcionFormB 
+              tasaBcv={tasaBcv}
+              costoUnaCategoria={costoUnaCategoria}
+              costoAmbasCategorias={costoAmbasCategorias}
+              categoria={formDataA.categoria as 'RENDER' | 'IA' | 'AMBAS' || 'RENDER'}
+              configPago={configPago}
+              onBack={() => {
+                setStep('A');
+                setError(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onSubmit={handleFormBSubmit}
+              isLoading={isLoading}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

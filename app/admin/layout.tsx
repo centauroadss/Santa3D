@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, LogOut, ListChecks, UserCog, ShieldCheck, Image, FileVideo, Lock } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, ListChecks, UserCog, ShieldCheck, Image, FileVideo, Lock, Settings, Mail } from 'lucide-react';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -79,6 +79,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link href="/admin/likes-closing" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/likes-closing' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
                         <ShieldCheck size={18} />
                         Likes Cierre
+                    </Link>
+                    <Link href="/admin/inscripcion" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/inscripcion' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
+                        <Settings size={18} />
+                        Inscripción
+                    </Link>
+                    <Link href="/admin/configuracion" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/configuracion' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
+                        <Settings size={18} />
+                        Configuración Global
+                    </Link>
+                    <Link href="/admin/emails" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/emails' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
+                        <Mail size={18} />
+                        Plantillas y Automatización
                     </Link>
                     <Link href="/admin/seguridad" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/seguridad' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
                         <ShieldCheck size={18} />

@@ -8,11 +8,13 @@ import Card from '@/components/ui/Card';
 interface VideoData {
     id: string;
     participantName: string;
-    alias: string;
     email: string;
-    instagram: string;
+    telefono: string;
+    categoria: string;
+    categoriaInscripcion: string;
     fileName: string;
     url: string | null;
+    comprobanteUrl: string | null;
     status: string;
     uploadedAt: string;
     fileSize: number;
@@ -20,11 +22,7 @@ interface VideoData {
     resolution: string;
     fps: number | string;
     duration: number | string;
-    codec: string;
-    // New fields
-    telefono?: string;
-    fechaNacimiento?: string; // ISO Date string
-    age?: number | string;
+    warnings: any[];
 }
 type SortField = 'uploadedAt' | 'fileSize' | 'participantName' | 'status' | 'duration' | 'age';
 type SortOrder = 'asc' | 'desc';
@@ -33,11 +31,13 @@ export default function AdminVideosPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [categoriaFilter, setCategoriaFilter] = useState<string>('all');
     // Sorting
     const [sortField, setSortField] = useState<SortField>('uploadedAt');
     const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
     // Playing
     const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+    const [playingImage, setPlayingImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     useEffect(() => {
         fetchVideos();
@@ -100,12 +100,14 @@ export default function AdminVideosPage() {
             result = result.filter(v =>
                 v.participantName.toLowerCase().includes(lowerTerm) ||
                 v.email.toLowerCase().includes(lowerTerm) ||
-                v.alias.toLowerCase().includes(lowerTerm) ||
-                (v.instagram && v.instagram.toLowerCase().includes(lowerTerm))
+                (v.telefono && v.telefono.includes(lowerTerm))
             );
         }
         if (statusFilter !== 'all') {
             result = result.filter(v => v.status === statusFilter);
+        }
+        if (categoriaFilter !== 'all') {
+            result = result.filter(v => v.categoria === categoriaFilter);
         }
         // 2. Sort
         result.sort((a, b) => {
@@ -128,6 +130,13 @@ export default function AdminVideosPage() {
     const SortIcon = ({ field }: { field: SortField }) => {
         if (sortField !== field) return <div className="w-4 h-4 ml-1 inline-block opacity-0 group-hover:opacity-30 self-center"><ChevronDown size={14} /></div>;
         return <div className="w-4 h-4 ml-1 inline-block text-brand-purple self-center">{sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</div>;
+    };
+    
+    // Función para manejar clicks fuera del modal de imagen
+    const handleImageModalClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+            setPlayingImage(null);
+        }
     };
     return (
         <div className="space-y-6">
@@ -152,10 +161,18 @@ export default function AdminVideosPage() {
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
                         <option value="all">Todos los Estados</option>
-                        <option value="PENDING_UPLOAD">Pendiente Subida</option>
-                        <option value="PENDING_VALIDATION">Validando</option>
-                        <option value="VALIDATED">Validado</option>
-                        <option value="REJECTED">Rechazado</option>
+                        <option value="RECIBIDO">Recibido</option>
+                        <option value="APROBADO">Aprobado</option>
+                        <option value="RECHAZADO">Rechazado</option>
+                    </select>
+                    <select
+                        className="bg-white border boundary-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-purple"
+                        value={categoriaFilter}
+                        onChange={(e) => setCategoriaFilter(e.target.value)}
+                    >
+                        <option value="all">Categorías</option>
+                        <option value="RENDER">Render 3D</option>
+                        <option value="IA">Inteligencia Artificial</option>
                     </select>
                 </div>
             </div>
@@ -171,22 +188,23 @@ export default function AdminVideosPage() {
                                     <div className="flex">Participante <SortIcon field="participantName" /></div>
                                 </th>
                                 <th className="px-4 py-3 text-center">Datos</th>
+                                <th className="px-4 py-3 text-center">Categoría</th>
                                 <th className="px-4 py-3 text-center">
                                     <div className="flex flex-col">
                                         <span>RES</span>
-                                        <span className="text-[10px] text-gray-400 font-normal">1024x1792</span>
+                                        <span className="text-[10px] text-gray-400 font-normal">1024x2048</span>
                                     </div>
                                 </th>
                                 <th className="px-4 py-3 text-center">
                                     <div className="flex flex-col">
                                         <span>FPS</span>
-                                        <span className="text-[10px] text-gray-400 font-normal">30 o+</span>
+                                        <span className="text-[10px] text-gray-400 font-normal">30</span>
                                     </div>
                                 </th>
                                 <th className="px-4 py-3 text-center cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => handleSort('duration')}>
                                     <div className="flex flex-col items-center">
                                         <div className="flex justify-center">Duración <SortIcon field="duration" /></div>
-                                        <span className="text-[10px] text-gray-400 font-normal">15-20 seg</span>
+                                        <span className="text-[10px] text-gray-400 font-normal">30 seg</span>
                                     </div>
                                 </th>
                                 <th className="px-4 py-3 text-right cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => handleSort('fileSize')}>
@@ -195,18 +213,19 @@ export default function AdminVideosPage() {
                                 <th className="px-4 py-3 text-center cursor-pointer group hover:bg-gray-100 transition-colors" onClick={() => handleSort('status')}>
                                     <div className="flex justify-center">Estado <SortIcon field="status" /></div>
                                 </th>
-                                <th className="px-4 py-3 text-center w-24">Video</th>
+                                <th className="px-4 py-3 text-center w-24">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-sm">
                             {processedVideos.map((video) => {
-                                const isResOk = video.resolution === '1024x1792';
+                                const isResOk = video.resolution === '1024x2048';
                                 const fpsVal = typeof video.fps === 'string' ? parseFloat(video.fps) : video.fps;
-                                const isFpsOk = fpsVal && fpsVal >= 30;
+                                const isFpsOk = fpsVal && fpsVal >= 25; // Asumimos 25-30 como OK
                                 const durVal = typeof video.duration === 'string' ? parseFloat(video.duration) : video.duration;
-                                const isDurOk = durVal && durVal >= 15 && durVal <= 20;
+                                const isDurOk = durVal && durVal === 30; // 30s es la regla
                                 const okClass = 'text-green-600 font-bold';
-                                const errClass = 'text-red-500 font-bold';
+                                const warnClass = 'text-yellow-600 font-bold';
+                                
                                 return (
                                     <tr key={video.id} className="hover:bg-gray-50/80 transition-colors">
                                         <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
@@ -214,63 +233,65 @@ export default function AdminVideosPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="font-bold text-gray-900 leading-tight">{video.participantName}</div>
-                                            <div className="text-xs text-gray-500">{video.alias}</div>
-                                            <div className="text-[10px] text-gray-400 font-mono">{video.email}</div>
+                                            <div className="text-[10px] text-gray-400 font-mono mt-1">{video.email}</div>
+                                            <div className="text-[10px] text-gray-400 font-mono">{video.telefono}</div>
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-gray-600">
-                                            <div className="flex flex-col gap-0.5">
-                                                {video.instagram && (
-                                                    <div className="flex items-center gap-1" title="Instagram">
-                                                        <span className="text-pink-500 font-bold">IG:</span> {video.instagram}
-                                                    </div>
-                                                )}
-                                                {video.telefono && (
-                                                    <div className="flex items-center gap-1" title="Teléfono">
-                                                        <span className="text-green-600 font-bold">Tel:</span> {video.telefono}
-                                                    </div>
-                                                )}
-                                                {video.fechaNacimiento && (
-                                                    <div className="flex items-center gap-1" title="Fecha Nacimiento">
-                                                        <span className="text-gray-500 font-bold">Nac:</span> {format(new Date(video.fechaNacimiento), 'dd/MM/yyyy')}
-                                                    </div>
-                                                )}
-                                                <div className="flex items-center gap-1" title="Edad">
-                                                    <span className="text-blue-500 font-bold">Edad:</span> {video.age} años
-                                                </div>
-                                            </div>
+                                        <td className="px-4 py-3 text-xs text-gray-600 text-center">
+                                            {video.categoriaInscripcion === 'AMBAS' && (
+                                                <div className="text-[10px] font-bold text-purple-600 mb-1 border border-purple-200 bg-purple-50 rounded px-1 inline-block">INSCRITO: AMBAS</div>
+                                            )}
                                         </td>
-                                        <td className={`px-4 py-3 text-center font-mono text-xs ${isResOk ? okClass : errClass}`}>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${video.categoria === 'RENDER' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                {video.categoria}
+                                            </span>
+                                        </td>
+                                        <td className={`px-4 py-3 text-center font-mono text-xs ${isResOk ? okClass : warnClass}`}>
                                             {video.resolution || '-'}
                                         </td>
-                                        <td className={`px-4 py-3 text-center font-mono text-xs ${isFpsOk ? okClass : errClass}`}>
+                                        <td className={`px-4 py-3 text-center font-mono text-xs ${isFpsOk ? okClass : warnClass}`}>
                                             {video.fps ? video.fps : '-'}
                                         </td>
-                                        <td className={`px-4 py-3 text-center font-mono text-xs ${isDurOk ? okClass : errClass}`}>
+                                        <td className={`px-4 py-3 text-center font-mono text-xs ${isDurOk ? okClass : warnClass}`}>
                                             {formatDuration(video.duration)}
                                         </td>
                                         <td className="px-4 py-3 text-right font-mono text-xs text-brand-purple font-medium whitespace-nowrap">
                                             {formatBytes(video.fileSize)}
                                         </td>
                                         <td className="px-4 py-3 text-center">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${video.status === 'VALIDATED' ? 'bg-green-100 text-green-700' :
-                                                video.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                    video.status === 'PENDING_VALIDATION' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-gray-100 text-gray-500'
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${video.status === 'APROBADO' ? 'bg-green-100 text-green-700' :
+                                                video.status === 'RECHAZADO' ? 'bg-red-100 text-red-700' :
+                                                    'bg-blue-100 text-blue-700'
                                                 }`}>
-                                                {(video.status || 'UNKNOWN').replace('_', ' ')}
+                                                {(video.status || 'RECIBIDO').replace('_', ' ')}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-center">
-                                            {video.url ? (
-                                                <button
-                                                    onClick={() => setPlayingVideo(video.url)}
-                                                    className="w-full h-8 bg-black/5 hover:bg-brand-purple hover:text-white rounded flex items-center justify-center transition-all group"
-                                                >
-                                                    <Play size={14} className="ml-0.5" />
-                                                </button>
-                                            ) : (
-                                                <div className="text-gray-300 flex justify-center"><FileVideo size={16} /></div>
-                                            )}
+                                            <div className="flex gap-2 justify-center">
+                                                {video.comprobanteUrl ? (
+                                                    <button
+                                                        onClick={() => setPlayingImage(video.comprobanteUrl)}
+                                                        className="w-8 h-8 bg-black/5 hover:bg-green-600 hover:text-white text-green-600 rounded flex items-center justify-center transition-all group"
+                                                        title="Ver Comprobante de Pago"
+                                                    >
+                                                        <span className="text-[10px] font-bold">$</span>
+                                                    </button>
+                                                ) : (
+                                                    <div className="w-8 h-8 flex items-center justify-center text-gray-300" title="Sin pago"><span className="text-[10px]">$</span></div>
+                                                )}
+
+                                                {video.url ? (
+                                                    <button
+                                                        onClick={() => setPlayingVideo(video.url)}
+                                                        className="w-8 h-8 bg-black/5 hover:bg-brand-purple hover:text-white rounded flex items-center justify-center transition-all group"
+                                                        title="Reproducir Video"
+                                                    >
+                                                        <Play size={14} className="ml-0.5" />
+                                                    </button>
+                                                ) : (
+                                                    <div className="w-8 h-8 flex justify-center items-center text-gray-300"><FileVideo size={16} /></div>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -320,6 +341,29 @@ export default function AdminVideosPage() {
                                 onError={(e) => console.error("Video Error:", e)}
                             />
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Admin Receipt Image Modal */}
+            {playingImage && (
+                <div 
+                    className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300 cursor-pointer"
+                    onClick={handleImageModalClick}
+                >
+                    <button
+                        onClick={() => setPlayingImage(null)}
+                        className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors z-[120]"
+                    >
+                        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center bg-transparent cursor-default rounded-xl overflow-hidden shadow-2xl">
+                        <img 
+                            src={playingImage} 
+                            alt="Comprobante de Pago" 
+                            className="max-w-full max-h-[90vh] object-contain rounded-xl"
+                        />
                     </div>
                 </div>
             )}

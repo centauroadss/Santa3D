@@ -5,6 +5,7 @@ import { Sparkles, Video, Trophy, ArrowRight, Gamepad2, Monitor, CheckCircle2 } 
 import JurySection from '@/components/ui/JurySection';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import ParticipantsCounter from '@/components/ui/ParticipantsCounter';
+import GatewayButtons from '@/components/ui/GatewayButtons';
 
 import { prisma } from '@/lib/prisma';
 import { unstable_noStore as noStore } from 'next/cache';
@@ -16,6 +17,8 @@ export default async function LandingPage() {
   noStore();
   const statusSetting = await prisma.contestSetting.findUnique({ where: { key: 'CONTEST_IS_CLOSED' } });
   const isClosed = statusSetting?.value === 'true';
+  const videoCount = await prisma.videoCopa2026.count({ where: { estatus: 'APROBADO' } });
+  const hasVideos = videoCount > 0;
   return (
     <main className="min-h-screen bg-[#050505] text-white selection:bg-red-500/30">
       <section className="relative pt-20 pb-32 px-4 overflow-hidden">
@@ -37,21 +40,7 @@ export default async function LandingPage() {
           <p className="text-red-400 font-bold text-lg mt-4 animate-pulse">
             El plazo es hasta el 30 de Diciembre 2025 a la media noche
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            {!isClosed ? (
-              <Link href="/registro" className="w-full sm:w-auto px-10 py-5 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 flex items-center justify-center gap-3 group">
-                Postular mi Video
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-            ) : (
-              <div className="w-full sm:w-auto px-10 py-5 bg-gray-600 text-gray-300 rounded-2xl font-black uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-3 shadow-none">
-                Convocatoria Cerrada
-              </div>
-            )}
-            <a href="#ranking" className="w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all">
-              Ver Ranking
-            </a>
-          </div>
+          <GatewayButtons isClosed={isClosed} hasVideos={hasVideos} />
         </div>
       </section>
       <ParticipantsCounter />

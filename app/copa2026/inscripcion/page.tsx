@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { InscripcionWizard } from '@/components/copa2026/forms/InscripcionWizard';
+import InscripcionWizard from '@/components/copa2026/forms/InscripcionWizard';
 import { getTasaDelDia } from '@/lib/copa2026/bcv';
 
 const prisma = new PrismaClient();
@@ -25,7 +25,7 @@ export default async function InscripcionPage() {
     const configs = await prisma.configConcurso.findMany({
         where: {
             clave: {
-                in: ['pago_telefono', 'pago_cedula', 'pago_banco']
+                in: ['pago_telefono', 'pago_cedula', 'pago_banco', 'costo_una_categoria', 'costo_ambas_categorias']
             }
         }
     });
@@ -37,6 +37,9 @@ export default async function InscripcionPage() {
         cedula: configMap['pago_cedula'] || fallbackConfig.cedula,
         banco: configMap['pago_banco'] || fallbackConfig.banco,
     };
+
+    const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
+    const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
 
     return (
         <div className="min-h-screen bg-[#050505] text-white py-12 px-4 md:px-8 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black">
@@ -50,9 +53,10 @@ export default async function InscripcionPage() {
 
                 {tasaBcv > 0 ? (
                     <InscripcionWizard 
-                        tasaBcv={tasaBcv} 
-                        bancos={bancos} 
-                        configPago={configPago} 
+                        tasaBcv={tasaBcv}
+                        costoUnaCategoria={costoUnaCategoria}
+                        costoAmbasCategorias={costoAmbasCategorias}
+                        configPago={configPago}
                     />
                 ) : (
                     <div className="text-center p-8 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-400">

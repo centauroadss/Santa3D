@@ -1,108 +1,135 @@
 'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Card from '@/components/ui/Card';
+import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+export default function ConfirmacionInscripcionPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'success' | 'error' | 'cooldown'>('idle');
+  const [timeLeft, setTimeLeft] = useState(0);
 
-export default function ConfirmacionPage() {
-    const [email, setEmail] = useState('');
-    const [nombre, setNombre] = useState('');
-    const [categoria, setCategoria] = useState('');
-    const [monto, setMonto] = useState('');
+  useEffect(() => {
+    // Para propósitos de desarrollo/UI mock, usamos un email dummy o podemos buscarlo en localStorage si el wizard lo guarda.
+    const savedEmail = sessionStorage.getItem('copa2026_registered_email') || 'participante@email.com';
+    setEmail(savedEmail);
+
+    const lastResend = sessionStorage.getItem('copa2026_last_resend');
+    if (lastResend) {
+      const timePassed = Date.now() - parseInt(lastResend);
+      if (timePassed < 5 * 60 * 1000) {
+        setResendStatus('cooldown');
+        setTimeLeft(Math.ceil((5 * 60 * 1000 - timePassed) / 1000));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            setResendStatus('idle');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft]);
+
+  const handleResend = async () => {
+    if (!email || resendStatus === 'cooldown') return;
     
-    const [reenviando, setReenviando] = useState(false);
-    const [mensaje, setMensaje] = useState<{tipo: 'success'|'error', texto: string} | null>(null);
+    setIsResending(true);
+    setResendStatus('idle');
+    try {
+      // Mock API call
+      // await axios.post('/api/copa2026/inscripcion/reenviar-email', { email });
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setResendStatus('success');
+      sessionStorage.setItem('copa2026_last_resend', Date.now().toString());
+      setTimeLeft(5 * 60);
+      setTimeout(() => setResendStatus('cooldown'), 3000);
+    } catch (error) {
+      console.error(error);
+      setResendStatus('error');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
-    useEffect(() => {
-        // Cargar datos de sessionStorage
-        setEmail(sessionStorage.getItem('copa2026_confirm_email') || '');
-        setNombre(sessionStorage.getItem('copa2026_confirm_nombre') || '');
-        setCategoria(sessionStorage.getItem('copa2026_confirm_categoria') || '');
-        setMonto(sessionStorage.getItem('copa2026_confirm_monto') || '');
-    }, []);
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
-    const handleReenviar = async () => {
-        if (!email) return;
-
-        // Limitar a 1 reenvío cada 5 minutos
-        const lastSent = sessionStorage.getItem('copa2026_last_resend');
-        if (lastSent) {
-            const timeDiff = Date.now() - parseInt(lastSent, 10);
-            if (timeDiff < 5 * 60 * 1000) {
-                const minutosRestantes = Math.ceil((5 * 60 * 1000 - timeDiff) / 60000);
-                setMensaje({ tipo: 'error', texto: `Por favor espera ${minutosRestantes} minutos antes de reenviar.` });
-                return;
-            }
-        }
-
-        setReenviando(true);
-        setMensaje(null);
-
-        try {
-            const response = await fetch('/api/copa2026/inscripcion/reenviar-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Error al reenviar el correo');
-            }
-
-            sessionStorage.setItem('copa2026_last_resend', Date.now().toString());
-            setMensaje({ tipo: 'success', texto: 'Correo reenviado exitosamente. Revisa tu bandeja de entrada o spam.' });
-        } catch (error: any) {
-            setMensaje({ tipo: 'error', texto: error.message });
-        } finally {
-            setReenviando(false);
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-[#050505] text-white py-12 px-4 md:px-8 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-900 via-black to-black flex flex-col items-center justify-center">
-            <div className="max-w-2xl w-full bg-[#0a0a0a] border border-[#222] p-8 md:p-12 rounded-3xl shadow-2xl text-center">
-                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
-                    ✓
-                </div>
-                
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">¡Inscripción Exitosa!</h1>
-                <p className="text-neutral-400 mb-8 text-lg">
-                    Hola {nombre}, hemos validado tu pago (Bs. {monto}) y registrado tu inscripción en la categoría <strong>{categoria}</strong>.
-                </p>
-
-                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-8 text-left">
-                    <h3 className="font-semibold text-white mb-2">Pasos Siguientes:</h3>
-                    <ul className="text-neutral-400 space-y-2 list-disc list-inside">
-                        <li>Hemos enviado un correo a <strong>{email}</strong> con tu link único para subir el video.</li>
-                        <li>El link es privado y de un solo uso para la carga de tu proyecto final.</li>
-                        <li>Tienes hasta el 05 de Junio de 2026 para enviar tu video.</li>
-                    </ul>
-                </div>
-
-                <div className="space-y-4">
-                    {mensaje && (
-                        <div className={`p-4 rounded-lg text-sm ${mensaje.tipo === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/30' : 'bg-red-500/10 text-red-500 border border-red-500/30'}`}>
-                            {mensaje.texto}
-                        </div>
-                    )}
-
-                    <button 
-                        onClick={handleReenviar} 
-                        disabled={reenviando}
-                        className="w-full px-6 py-4 bg-neutral-800 hover:bg-neutral-700 text-white rounded-full font-semibold transition-all disabled:opacity-50"
-                    >
-                        {reenviando ? 'Reenviando...' : 'Reenviar correo de confirmación'}
-                    </button>
-
-                    <Link 
-                        href="/copa2026"
-                        className="block w-full px-6 py-4 border border-neutral-700 text-neutral-300 rounded-full font-semibold transition-all hover:bg-neutral-800"
-                    >
-                        Volver al inicio
-                    </Link>
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+      <Card className="max-w-xl w-full text-center p-8 md:p-12 bg-[#0a0a0a] border-white/10 shadow-2xl">
+        <div className="flex justify-center mb-6">
+          <div className="w-24 h-24 rounded-full bg-brand-purple/20 flex items-center justify-center border-4 border-brand-purple">
+            <CheckCircle2 size={48} className="text-brand-purple" />
+          </div>
         </div>
-    );
+        
+        <h1 className="text-3xl md:text-4xl font-black text-white mb-4 uppercase tracking-tighter">
+          ¡Inscripción Exitosa!
+        </h1>
+        
+        <div className="bg-[#111] border border-white/10 rounded-2xl p-6 mb-8 text-left">
+          <p className="text-gray-300 text-lg mb-4 text-center">
+            Tu pago ha sido validado correctamente.
+          </p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Mail className="text-brand-purple shrink-0 mt-1" size={20} />
+              <div>
+                <p className="font-bold text-white">Revisa tu correo electrónico</p>
+                <p className="text-sm text-gray-400">
+                  Hemos enviado un email a <strong className="text-white">{email}</strong> con tu Enlace Privado de Carga. Necesitarás este enlace para subir tu video antes del cierre del concurso.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <button
+            onClick={() => router.push('/')}
+            className="w-full bg-white text-black hover:bg-gray-200 font-black py-4 px-6 rounded-xl uppercase tracking-widest transition-colors"
+          >
+            Volver al Inicio
+          </button>
+          
+          <button
+            onClick={handleResend}
+            disabled={isResending || resendStatus === 'cooldown'}
+            className="w-full bg-[#111] text-gray-300 border border-white/10 hover:bg-white/5 font-bold py-4 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isResending ? 'Enviando...' : 
+             resendStatus === 'cooldown' ? `Reenviar correo (Espera ${formatTime(timeLeft)})` : 
+             'Reenviar correo de confirmación'}
+          </button>
+          
+          {resendStatus === 'success' && (
+            <p className="text-green-500 text-sm font-medium animate-in fade-in flex items-center justify-center gap-1">
+              <CheckCircle2 size={16} /> Correo enviado correctamente
+            </p>
+          )}
+          {resendStatus === 'error' && (
+            <p className="text-red-500 text-sm font-medium animate-in fade-in flex items-center justify-center gap-1">
+              <AlertCircle size={16} /> Error al enviar el correo
+            </p>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
 }

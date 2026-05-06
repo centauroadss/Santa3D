@@ -1,5 +1,9 @@
 import { StorageService } from './storage';
 import { EmailService } from './email-service';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
 /*
   CRITICAL: EMAIL CONTENT
   1. Rich HTML Template with Technical Stats.
@@ -19,20 +23,21 @@ async function fetchRemoteAttachment(url: string, filename: string) {
     return null;
   }
 }
+
 interface EmailParams {
   to: string;
   subject: string;
   html: string;
+  tipo?: string;
   attachments?: any[];
 }
-async function sendEmail({ to, subject, html, attachments }: EmailParams): Promise<boolean> {
-  // FORCE TEST RECIPIENT FOR SAFETY
-  const TEST_RECIPIENT = 'joaoucab@gmail.com';
-  console.log(`📧 Sending email to ${TEST_RECIPIENT} (Subject: ${subject})`);
+
+async function sendEmail({ to, subject, html, tipo, attachments }: EmailParams): Promise<boolean> {
   const result = await EmailService.send({
-    to: TEST_RECIPIENT,
+    to: to,
     subject: subject,
     html,
+    tipo,
     attachments
   });
   if (!result.success) {
@@ -42,34 +47,29 @@ async function sendEmail({ to, subject, html, attachments }: EmailParams): Promi
   console.log('✅ Email sent successfully.');
   return true;
 }
-export async function sendRegistrationEmail(email: string, nombre: string): Promise<boolean> {
-  const html = `<!DOCTYPE html><html><body><h1>Registro</h1><p>Hola ${nombre}</p></body></html>`;
-  return await sendEmail({ to: email, subject: 'Registro Santa 3D', html });
-}
-export async function sendCertificateEmail(
+
+// ==========================================
+// 1. REGISTRO DE VIDEO / INSCRIPCION
+// ==========================================
+export async function sendConcursanteRegistroEmail(
   email: string,
   data: {
     nombre: string;
     apellido?: string;
     fileName: string;
-    fileSize: string;
-    submittedAt: string;
-    participantId?: string;
-    videoUrl?: string;
-    instagram?: string;
-    videoBuffer?: any;
     technicalStats?: any;
     metadata?: { width: number; height: number; duration: number; fps: number; resolution: string; };
   }
 ): Promise<boolean> {
   const attachments: any[] = [];
-  if (data.videoBuffer) {
-    attachments.push({ filename: data.fileName, content: data.videoBuffer });
-  } else if (data.videoUrl) {
-    const vid = await fetchRemoteAttachment(data.videoUrl, data.fileName);
-    if (vid) attachments.push(vid);
+  
+  // Buscar URL de adjunto en configuración
+  const config = await prisma.configConcurso.findUnique({ where: { clave: 'url_adjunto_registro_video' } });
+  if (config?.valor) {
+    const att = await fetchRemoteAttachment(config.valor, 'Instrucciones_Concursante.pdf');
+    if (att) attachments.push(att);
   }
-  // Stats Table Logic
+
   let m = data.metadata;
   if (!m && data.technicalStats) m = { width: 0, height: 0, fps: 0, duration: 0, resolution: data.technicalStats.resolution || 'N/A' };
   
@@ -95,7 +95,7 @@ export async function sendCertificateEmail(
             <tr>
                 <td style="padding: 5px; border-bottom: 1px solid #eee;">Duración</td>
                 <td style="padding: 5px; border-bottom: 1px solid #eee;">15s - 20s</td>
-                <td style="padding: 5px; border-bottom: 1px solid #eee; color: ${color(isDurOk)}; font-weight: bold;">${val(m.duration.toFixed(1))}s</td>
+                <td style="padding: 5px; border-bottom: 1px solid #eee; color: ${color(isDurOk)}; font-weight: bold;">${val(m.duration?.toFixed(1))}s</td>
             </tr>
             <tr>
                 <td style="padding: 5px;">FPS</td>
@@ -103,9 +103,9 @@ export async function sendCertificateEmail(
                 <td style="padding: 5px; color: ${color(isFpsOk)}; font-weight: bold;">~${val(m.fps)}</td>
             </tr>
         </table>
-        <p style="font-size: 11px; color: #777; margin-top: 10px; font-style: italic;">* La resolución, duración y los fps estaban especificados en el brief del concurso que descargaste.</p>
     </div>
   ` : '';
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -113,78 +113,102 @@ export async function sendCertificateEmail(
         <style>
           body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; padding: 20px; color: #333; }
           .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-          .header { background-color: #85439a; padding: 25px; text-align: center; }
           .content { padding: 40px; }
           h1 { color: #85439a; font-size: 22px; margin-bottom: 20px; text-align: center; }
           .message { margin-bottom: 30px; text-align: center; font-size: 16px; }
           .details-box { background-color: #f0f0f0; border-radius: 6px; padding: 20px; margin-bottom: 30px; border: 1px solid #e0e0e0; }
-          .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ccc; font-size: 14px; }
-          .label { font-weight: bold; color: #555; }
-          .value { font-family: monospace; color: #000; }
-          .steps-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
-          .step-card { background: #fffbe6; border-left: 4px solid #f79131; padding: 15px; margin-bottom: 15px; }
-          .step-title { font-weight: bold; color: #d48806; margin-bottom: 5px; display: block; }
-          .btn-insta { display: block; width: 200px; margin: 20px auto; background: #85439a; color: white; text-align: center; padding: 12px; border-radius: 50px; text-decoration: none; font-weight: bold; }
-          .footer { background: #333; color: #aaa; text-align: center; padding: 20px; font-size: 12px; }
         </style>
       </head>
       <body>
         <div class="container">
             <div class="content">
-                <h1>🎄 Constancia de Participación</h1>
-                <div class="message">Hola <strong>${data.nombre}</strong>,<br>¡Tu video ha sido recibido!<br></div>
+                <h1>🎉 ¡Felicidades, tu video ha sido recibido!</h1>
+                <div class="message">Hola <strong>${data.nombre}</strong>,<br>Tu video ha sido validado técnicamente. Ahora eres un concursante oficial.<br>Recuerda que debes hacer entrega definitiva de tu video hasta la fecha límite del concurso.</div>
+                
                 <div class="details-box">
-                    <div class="detail-row"><span class="label">Archivo:</span> <span class="value">${data.fileName}</span></div>
-                    <div class="detail-row"><span class="label">Participante:</span> <span class="value">${data.nombre} ${data.apellido || ''}</span></div>
-                    <div style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 13px; color: #555;">
-                        <p>✅ El concursante aceptó los términos.</p>
-                        <p>✅ Aceptó seguir a <strong>@centauroads</strong>.</p>
-                    </div>
+                    <div style="font-size: 14px; margin-bottom: 10px;"><strong>Archivo recibido:</strong> ${data.fileName}</div>
                 </div>
                 ${specsTable}
-                <div class="steps-section">
-                    <h2 style="text-align: center; color: #f79131;">🚀 Siguientes Pasos</h2>
-                    <div class="step-card"><span class="step-title">1️⃣ Publícalo</span>Sube tu video y menciona a <strong>@centauroads</strong>.</div>
-                    <div class="step-card" style="border-left-color: #85439a; background: #f3e5f5;"><span class="step-title">2️⃣ Consigue Likes</span>Comparte tu publicación.</div>
+                <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #555;">
+                  ¡Éxito en la competencia!<br>El equipo de Centauro ADS
                 </div>
-                <a href="https://instagram.com/centauroads" class="btn-insta">Ir a Instagram</a>
             </div>
-               <div class="footer">ID: ${data.participantId || '-'}</div>
         </div>
       </body>
     </html>
   `;
-  return await sendEmail({ to: email, subject: '🎅 Certificado de Recepción - Santa 3D', html, attachments });
+  return await sendEmail({ to: email, subject: 'Registro Exitoso - Santa 3D', html, tipo: 'REGISTRO_VIDEO', attachments });
 }
+
+// ==========================================
+// 2. CERTIFICADO DE PARTICIPACION
+// ==========================================
+export async function sendCertificateEmail(
+  email: string,
+  nombre: string
+): Promise<boolean> {
+  const attachments: any[] = [];
+  
+  const config = await prisma.configConcurso.findUnique({ where: { clave: 'url_adjunto_certificado' } });
+  if (config?.valor) {
+    const att = await fetchRemoteAttachment(config.valor, 'Certificado_Participacion.pdf');
+    if (att) attachments.push(att);
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; padding: 20px; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .header { background-color: #f79131; padding: 25px; text-align: center; color: white; font-size: 24px; font-weight: bold; }
+          .content { padding: 40px; }
+          .message { margin-bottom: 20px; font-size: 16px; line-height: 1.6; }
+          .quote { font-style: italic; background: #f9f9f9; border-left: 4px solid #85439a; padding: 15px; margin: 20px 0; color: #555; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+            <div class="header">🚀 Misión Cumplida<br><span style="font-size: 16px; font-weight: normal;">Concurso Santa 3D Venezolano</span></div>
+            <div class="content">
+                <div class="message">
+                    Estimado/a <strong>${nombre}</strong>,<br><br>
+                    <strong>¡Gracias por haber aceptado el reto!</strong><br><br>
+                    Queremos hacerte llegar tu Certificado de Participación Oficial en el concurso Santa 3D Venezolano. Este documento representa mucho más que una asistencia; es la prueba de que te atreviste a competir, a mostrar tu trabajo y a medirte con otros talentos en un tiempo récord durante el cierre del 2025.
+                </div>
+                <div class="quote">
+                    "En Centauro ADS estamos convencidos de que la práctica y la constancia son lo que separa a los buenos de los excelentes."
+                </div>
+                <div class="message">
+                    Ver tu propuesta nos llenó de entusiasmo y nos enseñó muchísimo sobre las diferentes visiones artísticas que existen en nuestro país.<br><br>
+                    <strong>¿Qué sigue ahora? Seguir mejorando.</strong> Queremos que este certificado sea un impulso para que continúes perfeccionando tu técnica. Nosotros ya estamos trabajando en mejorar nuestros procesos para futuras experiencias, y esperamos sinceramente ver tu nombre en la lista de inscritos de nuestros próximos llamados. ¡Queremos ver tu evolución!<br><br>
+                    <strong>🎓 Descarga tu Certificado Adjunto</strong><br>
+                    Siéntete orgulloso/a de lo logrado.<br><br>
+                    ¡Vamos por más en este 2026!<br>
+                    El equipo de Centauro ADS<br>
+                    ¡Visibilidad que conecta!
+                </div>
+            </div>
+        </div>
+      </body>
+    </html>
+  `;
+  return await sendEmail({ to: email, subject: 'Misión Cumplida: Concurso Santa 3D Venezolano', html, tipo: 'CERTIFICADO', attachments });
+}
+
+// ==========================================
+// 3. BIENVENIDA A JUECES
+// ==========================================
 export async function sendJudgeWelcomeEmail(email: string, nombre: string, apellido: string) {
   const attachments: any[] = [];
-  try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const publicDir = path.join(process.cwd(), 'public');
-    
-    console.log('📂 Preparing Judge Email Attachments from:', publicDir);
-    const filesToAttach = [
-      'Criterios_Evaluacion_Santa3D.png',
-      'infografia-guia-jueces.png'
-    ];
-    filesToAttach.forEach(file => {
-      try {
-          const filePath = path.join(publicDir, file);
-          if (fs.existsSync(filePath)) {
-            const content = fs.readFileSync(filePath);
-            attachments.push({ filename: file, content: content });
-            console.log(`✅ Attached: ${file}`);
-          } else {
-            console.warn(`⚠️ Missing: ${file} in ${publicDir}`);
-          }
-      } catch (innerErr) {
-          console.error(`❌ Error reading ${file}:`, innerErr);
-      }
-    });
-  } catch (e) {
-    console.error('❌ FATAL: Could not load fs/path for attachments:', e);
+  
+  const config = await prisma.configConcurso.findUnique({ where: { clave: 'url_adjunto_bienvenida_juez' } });
+  if (config?.valor) {
+    const att = await fetchRemoteAttachment(config.valor, 'Guia_Evaluacion_Jueces.pdf');
+    if (att) attachments.push(att);
   }
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -201,7 +225,6 @@ export async function sendJudgeWelcomeEmail(email: string, nombre: string, apell
           .bullet-list { margin: 0; padding-left: 20px; }
           .bullet-list li { margin-bottom: 8px; }
           .footer { background: #333; color: #aaa; text-align: center; padding: 20px; font-size: 12px; }
-          .btn-login { display: inline-block; background-color: #85439a; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 30px; font-weight: 800; margin-top: 10px; font-size: 16px; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
         </style>
       </head>
       <body>
@@ -209,7 +232,6 @@ export async function sendJudgeWelcomeEmail(email: string, nombre: string, apell
             <div class="header"><div style="font-size: 30px; color: white; font-weight: bold;">SANTA 3D 2025</div></div>
             <div class="content">
                 <h1>Bienvenida Oficial <br> Panel de Jueces</h1>
-                
                 <div class="message">
                     Estimado(a) <strong>${nombre} ${apellido}</strong>,<br><br>
                     Gracias por formar parte de nuestra mesa técnica de evaluación. A continuación le presentamos su Hoja de Ruta y credenciales de acceso.
@@ -237,24 +259,80 @@ export async function sendJudgeWelcomeEmail(email: string, nombre: string, apell
                 <p>El sistema calculará el promedio ponderado automáticamente.</p>
                 <h3 style="color: #d48806; margin-bottom: 5px;">📝 Carpeta "Todos"</h3>
                 <p style="margin-top: 0;">Su archivo histórico. Contiene tanto los pendientes como los ya calificados. Use esta sección si necesita Re-evaluar (Editar) algún puntaje anterior.</p>
-                
                 <h3 style="color: #d48806; margin-bottom: 5px;">📊 Grilla de Control</h3>
                 <p style="margin-top: 0;">En la vista de lista, podrá ver rápidamente el estado de cada video y su puntaje asignado.</p>
-                <div style="text-align: center; margin-top: 40px; margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-                    <p style="margin-bottom: 15px; font-weight: bold; color: #555;">Para iniciar tu votación presiona el siguiente botón:</p>
-                    <a href="http://167.172.217.151/jueces/login" class="btn-login">Votación Jueces</a>
-                </div>
             </div>
             <div class="footer">Concurso Santa 3D Venezolano 2025<br>Coordinación Técnica</div>
         </div>
       </body>
     </html>
   `;
-  return await sendEmail({ to: email, subject: 'Bienvenida Oficial - Panel de Jueces Santa 3D', html, attachments });
+  return await sendEmail({ to: email, subject: 'Bienvenida Oficial - Panel de Jueces Santa 3D', html, tipo: 'BIENVENIDA_JUEZ', attachments });
 }
+
+// ==========================================
+// 4. AGRADECIMIENTO A JUECES
+// ==========================================
+export async function sendJudgeThankYouEmail(email: string, nombre: string) {
+  const attachments: any[] = [];
+  
+  const config = await prisma.configConcurso.findUnique({ where: { clave: 'url_adjunto_agradecimiento_juez' } });
+  if (config?.valor) {
+    const att = await fetchRemoteAttachment(config.valor, 'Reporte_Final_Santa3D.pdf');
+    if (att) attachments.push(att);
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; padding: 20px; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .content { padding: 40px; }
+          .message { margin-bottom: 20px; font-size: 16px; line-height: 1.6; }
+          .highlight { background: #f3e5f5; padding: 15px; border-radius: 8px; margin: 20px 0; color: #85439a; font-weight: bold; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+            <div class="content">
+                <div style="font-size: 24px; text-align: center; margin-bottom: 20px;">🎄✨<br>¡Gracias, ${nombre}!</div>
+                <h2 style="text-align: center; color: #333; margin-top: 0;">Un cierre de año increíble para el talento venezolano</h2>
+                
+                <div class="message">
+                    Estimado, <strong>${nombre}</strong>!<br><br>
+                    ¡Lo logramos! Queremos agradecerte enormemente tu energía y dedicación como jurado en nuestro desafío Santa 3D Venezolano.<br><br>
+                    Tu apoyo fue vital para filtrar y reconocer la creatividad de los participantes que dieron vida a nuestra Navidad. Valoramos muchísimo que nos hayas brindado tu tiempo y tu ojo crítico; sabemos el esfuerzo que eso conlleva y, sinceramente, tu aporte elevó el nivel de la competencia.<br><br>
+                    En Centauro ADs hemos aprendido muchísimo de este proceso. Esta experiencia nos ha permitido crecer y ajustar nuestros motores para que las próximas competencias sean aún mejores. ¡Esperamos contar nuevamente con tu talento y visión en las próximas aventuras que ya estamos planeando!
+                </div>
+                
+                <div class="highlight">
+                    📎 Reporte Final Adjunto<br>
+                    <span style="font-size: 14px; font-weight: normal; color: #555;">Te compartimos el reporte final con tus evaluaciones para que tengas el registro de tu gran contribución.</span>
+                </div>
+                
+                <div class="message" style="text-align: center; font-weight: bold; margin-top: 30px;">
+                    ¡Gracias por impulsar el talento venezolano con nosotros!<br>
+                    <span style="color: #85439a;">El equipo de Centauro ADS</span>
+                </div>
+            </div>
+        </div>
+      </body>
+    </html>
+  `;
+  return await sendEmail({ to: email, subject: '¡Gracias por tu participación! - Santa 3D', html, tipo: 'AGRADECIMIENTO_JUEZ', attachments });
+}
+
+export async function sendRegistrationEmail(email: string, nombre: string): Promise<boolean> {
+  const html = \`<!DOCTYPE html><html><body><h1>Registro</h1><p>Hola \${nombre}</p></body></html>\`;
+  return await sendEmail({ to: email, subject: 'Registro Santa 3D', html, tipo: 'REGISTRO_GENERAL' });
+}
+
 export async function sendPasswordResetEmail(email: string, nameOrToken: string, password?: string) {
-  const html = `<h1>Reset Password</h1><p>Hola ${nameOrToken}, tu nueva clave es ${password || 'Token'}</p>`;
-  return await sendEmail({ to: email, subject: 'Restablecer Clave', html });
+  const html = \`<h1>Reset Password</h1><p>Hola \${nameOrToken}, tu nueva clave es \${password || 'Token'}</p>\`;
+  return await sendEmail({ to: email, subject: 'Restablecer Clave', html, tipo: 'RESET_PASSWORD' });
 }
+
 export async function sendVideoReceivedEmail() { return true; }
 export async function sendVideoRejectedEmail() { return true; }

@@ -1,124 +1,174 @@
 'use client';
-
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { ArrowRight } from 'lucide-react';
 
 const formSchema = z.object({
-    nombre: z.string().min(2, 'El nombre es obligatorio'),
-    apellido: z.string().min(2, 'El apellido es obligatorio'),
-    cedulaIdentidad: z.string().min(5, 'Cédula inválida (ej. V12345678)'),
-    email: z.string().email('Email inválido'),
-    telefono: z.string().regex(/^(412|422|414|424|416|426)[0-9]{7}$/, 'Teléfono inválido. Debe ser de 10 dígitos y empezar por 412, 422, 414, 424, 416 o 426'),
-    instagram: z.string().regex(/^@/, 'Debe comenzar con @').min(2, 'Usuario inválido'),
-    categoria: z.enum(['RENDER', 'IA', 'AMBAS'], { required_error: 'Selecciona una categoría' }),
-    terminos: z.literal(true, { errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' }) }),
-    derechos: z.literal(true, { errorMap: () => ({ message: 'Debes aceptar la cesión de derechos' }) }),
+  nombre: z.string().min(2, 'El nombre es muy corto'),
+  apellido: z.string().min(2, 'El apellido es muy corto'),
+  cedulaIdentidad: z.string().regex(/^[VEJP]-\d+$/, 'Formato inválido (Ej: V-12345678)'),
+  email: z.string().email('Email inválido'),
+  telefono: z.string().regex(/^(412|422|414|424|416|426)\d{7}$/, 'Debe tener 10 dígitos y empezar con un prefijo válido (ej: 412, 414, etc.) sin el 0'),
+  instagram: z.string().regex(/^@[\w.]+$/, 'Debe empezar con @').optional(),
+  categoria: z.enum(['RENDER', 'IA', 'AMBAS'], {
+    required_error: 'Debes seleccionar una categoría',
+  }),
+  aceptaTerminos: z.literal(true, {
+    errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' })
+  }),
+  cesionDerechos: z.literal(true, {
+    errorMap: () => ({ message: 'Debes aceptar la cesión de derechos' })
+  })
 });
 
-export type FormAValues = z.infer<typeof formSchema>;
+export type FormAData = z.infer<typeof formSchema>;
 
 interface Props {
-    onNext: (data: FormAValues) => void;
-    defaultValues?: Partial<FormAValues>;
+  initialData?: Partial<FormAData>;
+  onSubmit: (data: FormAData) => void;
 }
 
-export function InscripcionFormA({ onNext, defaultValues }: Props) {
-    const { register, handleSubmit, formState: { errors } } = useForm<FormAValues>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            ...defaultValues,
-            // defaults to avoid uncontrolled inputs warnings
-            nombre: defaultValues?.nombre || '',
-            apellido: defaultValues?.apellido || '',
-            cedulaIdentidad: defaultValues?.cedulaIdentidad || '',
-            email: defaultValues?.email || '',
-            telefono: defaultValues?.telefono || '',
-            instagram: defaultValues?.instagram || '',
-        }
-    });
+export default function InscripcionFormA({ initialData, onSubmit }: Props) {
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormAData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      categoria: 'RENDER',
+      ...initialData
+    }
+  });
 
-    return (
-        <form onSubmit={handleSubmit(onNext)} className="space-y-6 text-left">
-            <h2 className="text-2xl font-bold text-white mb-6">Paso 1: Datos Personales</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1">Nombre</label>
-                    <input {...register('nombre')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="Juan" />
-                    {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1">Apellido</label>
-                    <input {...register('apellido')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="Pérez" />
-                    {errors.apellido && <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>}
-                </div>
-            </div>
+  const selectedCategory = watch('categoria');
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1">Cédula / RIF</label>
-                    <input {...register('cedulaIdentidad')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="V12345678" />
-                    {errors.cedulaIdentidad && <p className="text-red-500 text-xs mt-1">{errors.cedulaIdentidad.message}</p>}
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1">Teléfono (10 dígitos sin el 0)</label>
-                    <input {...register('telefono')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="4141234567" maxLength={10} />
-                    {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
-                </div>
-            </div>
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-black uppercase text-white mb-2">Paso 1: Datos Personales</h2>
+        <p className="text-gray-400">Ingresa tus datos para registrarte en el concurso</p>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1">Correo Electrónico</label>
-                    <input {...register('email')} type="email" className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="correo@ejemplo.com" />
-                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-neutral-400 mb-1">Usuario de Instagram</label>
-                    <input {...register('instagram')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none" placeholder="@usuario" />
-                    {errors.instagram && <p className="text-red-500 text-xs mt-1">{errors.instagram.message}</p>}
-                </div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Nombre</label>
+          <input
+            {...register('nombre')}
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+            placeholder="Tu nombre"
+          />
+          {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Apellido</label>
+          <input
+            {...register('apellido')}
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+            placeholder="Tu apellido"
+          />
+          {errors.apellido && <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>}
+        </div>
+      </div>
 
-            <div>
-                <label className="block text-sm font-medium text-neutral-400 mb-2">Categoría a Participar</label>
-                <select {...register('categoria')} className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-3 text-white focus:ring-2 focus:ring-red-500 focus:outline-none">
-                    <option value="">Selecciona una opción...</option>
-                    <option value="RENDER">Render 3D Tradicional ($10)</option>
-                    <option value="IA">Video con Inteligencia Artificial ($10)</option>
-                    <option value="AMBAS">Ambas Categorías ($20)</option>
-                </select>
-                {errors.categoria && <p className="text-red-500 text-xs mt-1">{errors.categoria.message}</p>}
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Cédula de Identidad</label>
+          <input
+            {...register('cedulaIdentidad')}
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors uppercase"
+            placeholder="V-12345678"
+          />
+          {errors.cedulaIdentidad && <p className="text-red-500 text-xs mt-1">{errors.cedulaIdentidad.message}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Teléfono Móvil (Sin el 0)</label>
+          <div className="flex">
+            <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-white/10 bg-[#222] text-gray-400 font-bold">
+              +58
+            </span>
+            <input
+              {...register('telefono')}
+              className="w-full bg-[#111] border border-white/10 rounded-r-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+              placeholder="4141234567"
+              maxLength={10}
+            />
+          </div>
+          {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
+        </div>
+      </div>
 
-            <div className="space-y-3 pt-4 border-t border-neutral-800">
-                <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                        <input {...register('terminos')} id="terminos" type="checkbox" className="w-4 h-4 rounded bg-neutral-900 border-neutral-700 text-red-500 focus:ring-red-500 focus:ring-offset-neutral-900" />
-                    </div>
-                    <label htmlFor="terminos" className="ml-2 text-sm text-neutral-400">
-                        Acepto los términos y condiciones del concurso Copa Santa 3D 2026.
-                    </label>
-                </div>
-                {errors.terminos && <p className="text-red-500 text-xs mt-1">{errors.terminos.message}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Correo Electrónico</label>
+          <input
+            {...register('email')}
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+            placeholder="tu@email.com"
+            type="email"
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Usuario de Instagram</label>
+          <input
+            {...register('instagram')}
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+            placeholder="@tu_usuario"
+          />
+          {errors.instagram && <p className="text-red-500 text-xs mt-1">{errors.instagram.message}</p>}
+        </div>
+      </div>
 
-                <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                        <input {...register('derechos')} id="derechos" type="checkbox" className="w-4 h-4 rounded bg-neutral-900 border-neutral-700 text-red-500 focus:ring-red-500 focus:ring-offset-neutral-900" />
-                    </div>
-                    <label htmlFor="derechos" className="ml-2 text-sm text-neutral-400">
-                        Acepto la cesión de derechos de autor de mi obra para uso promocional del evento.
-                    </label>
-                </div>
-                {errors.derechos && <p className="text-red-500 text-xs mt-1">{errors.derechos.message}</p>}
-            </div>
+      <div>
+        <label className="block text-sm font-bold text-gray-300 mb-4">Selecciona la Categoría</label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {['RENDER', 'IA', 'AMBAS'].map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setValue('categoria', cat as any, { shouldValidate: true })}
+              className={`py-4 rounded-xl font-bold uppercase transition-all border ${
+                selectedCategory === cat 
+                  ? 'bg-brand-purple text-white border-brand-purple shadow-lg shadow-brand-purple/20' 
+                  : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+        {errors.categoria && <p className="text-red-500 text-xs mt-2">{errors.categoria.message}</p>}
+      </div>
 
-            <div className="pt-6">
-                <button type="submit" className="w-full px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 rounded-full font-bold text-white text-lg transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_-5px_rgba(239,68,68,0.5)]">
-                    Continuar al Pago
-                </button>
-            </div>
-        </form>
-    );
+      <div className="space-y-4 pt-6 border-t border-white/10">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="mt-1 flex-shrink-0">
+            <input type="checkbox" {...register('aceptaTerminos')} className="w-5 h-5 accent-brand-purple" />
+          </div>
+          <span className="text-sm text-gray-400 group-hover:text-gray-300">
+            He leído y acepto los <a href="#" className="text-brand-purple hover:underline">Términos y Condiciones</a> del concurso Copa 2026.
+          </span>
+        </label>
+        {errors.aceptaTerminos && <p className="text-red-500 text-xs ml-8">{errors.aceptaTerminos.message}</p>}
+
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="mt-1 flex-shrink-0">
+            <input type="checkbox" {...register('cesionDerechos')} className="w-5 h-5 accent-brand-purple" />
+          </div>
+          <span className="text-sm text-gray-400 group-hover:text-gray-300">
+            Acepto la cesión de derechos de autor para la exhibición pública de la obra en caso de resultar seleccionada.
+          </span>
+        </label>
+        {errors.cesionDerechos && <p className="text-red-500 text-xs ml-8">{errors.cesionDerechos.message}</p>}
+      </div>
+
+      <div className="pt-6">
+        <button
+          type="submit"
+          className="w-full bg-white hover:bg-gray-200 text-black font-black uppercase tracking-widest py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-colors"
+        >
+          Siguiente Paso: Pago <ArrowRight size={20} />
+        </button>
+      </div>
+    </form>
+  );
 }

@@ -9,56 +9,67 @@ export async function GET(request: NextRequest) {
     if (!auth || auth.role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    const videos = await prisma.video.findMany({
-      include: { participant: true },
-      orderBy: { uploadedAt: 'desc' },
+
+    const videos = await prisma.videoCopa2026.findMany({
+      include: { 
+          inscripcion: {
+              include: { pago: true }
+          } 
+      },
+      orderBy: { createdAt: 'desc' },
     });
+
     const formattedVideos = await Promise.all(videos.map(async (video) => {
-      let age = 'N/A';
-      if (video.participant.fechaNacimiento) {
-        const today = new Date();
-        const birthDate = new Date(video.participant.fechaNacimiento);
-        let ageNum = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            ageNum--;
-        }
-        age = ageNum.toString();
+      // Determinamos categoría individual del video si la inscripción es AMBAS
+      let categoriaVideo = video.inscripcion.categoria;
+      if (categoriaVideo === 'AMBAS') {
+          if (video.rutaS3.includes('render/')) categoriaVideo = 'RENDER';
+          else if (video.rutaS3.includes('ia/')) categoriaVideo = 'IA';
       }
-      const metadata = video.validationResult as any || {};
-      // GENERACIÓN DE URL FIRMADA
-      // Esto garantiza acceso al video aunque el bucket sea privado
+
+      // GENERACIÓN DE URL FIRMADA (VIDEO)
       let playUrl = null;
-      if (video.storageKey) {
+      if (video.rutaS3) {
           try {
-              // Generamos una URL fresca válida por 1 hora cada vez que se pide la lista
-              playUrl = await StorageService.getSignedVideoUrl(video.storageKey);
+              playUrl = await StorageService.getSignedVideoUrl(video.rutaS3);
           } catch (err) {
               console.error(`Error generating signed URL for video ${video.id}:`, err);
-              playUrl = video.url;
           }
       }
+
+      // GENERACIÓN DE URL FIRMADA (COMPROBANTE PAGO)
+      let comprobanteUrl = null;
+      if (video.inscripcion.pago?.comprobantePath) {
+          try {
+              comprobanteUrl = await StorageService.getSignedVideoUrl(video.inscripcion.pago.comprobantePath);
+          } catch (err) {
+              console.error(`Error generating signed URL for receipt ${video.inscripcion.id}:`, err);
+          }
+      }
+
+      const warnings = video.warnings as any || [];
+
       return {
-        id: video.id,
-        participantName: `${video.participant.nombre} ${video.participant.apellido}`,
-        alias: video.participant.alias || '-',
-        email: video.participant.email,
-        instagram: video.participant.instagram,
-        telefono: video.participant.telefono,
-        fechaNacimiento: video.participant.fechaNacimiento,
-        age: age,
-        fileName: video.fileName,
-        url: playUrl || video.url, // Usamos la firmada preferentemente
-        status: video.status,
-        uploadedAt: video.uploadedAt,
-        fileSize: video.fileSize,
-        format: video.format || metadata.format || '-',
-        resolution: video.resolution || metadata.resolution || (metadata.width ? `${metadata.width}x${metadata.height}` : '-'),
-        fps: video.fps || metadata.fps || metadata.frameRate || '-',
-        duration: video.duration || metadata.duration || '-',
-        codec: metadata.codec || '-'
+        id: video.id.toString(),
+        participantName: `${video.inscripcion.nombre} ${video.inscripcion.apellido}`,
+        email: video.inscripcion.email,
+        telefono: video.inscripcion.telefono,
+        categoria: categoriaVideo,
+        categoriaInscripcion: video.inscripcion.categoria,
+        fileName: video.nombreArchivo,
+        url: playUrl,
+        comprobanteUrl: comprobanteUrl,
+        status: video.estatus,
+        uploadedAt: video.createdAt.toISOString(),
+        fileSize: Number(video.tamanoBytes),
+        format: video.formato || '-',
+        resolution: video.resolucion || '-',
+        fps: video.fps || '-',
+        duration: video.duracionSeg || '-',
+        warnings: warnings
       };
     }));
+
     return NextResponse.json({
       success: true,
       data: formattedVideos,

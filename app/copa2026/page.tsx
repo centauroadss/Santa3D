@@ -13,6 +13,28 @@ export default async function Copa2026Landing() {
         }
     });
 
+    // Calculate Inscritos & Concursantes (AMBAS counts as 2)
+    const inscripciones = await prisma.inscripcionCopa2026.groupBy({
+        by: ['categoria'],
+        _count: true
+    });
+
+    const concursantesData = await prisma.inscripcionCopa2026.groupBy({
+        by: ['categoria'],
+        where: { estatusInscripcion: 'COMPLETADO' },
+        _count: true
+    });
+
+    const calculateTotal = (data: any[]) => {
+        return data.reduce((acc, curr) => {
+            const multiplier = curr.categoria === 'AMBAS' ? 2 : 1;
+            return acc + (curr._count * multiplier);
+        }, 0);
+    };
+
+    const totalInscritos = calculateTotal(inscripciones);
+    const totalConcursantes = calculateTotal(concursantesData);
+
     const votingEnabled = approvedVideosCount > 0;
 
     return (
@@ -65,6 +87,19 @@ export default async function Copa2026Landing() {
                                 Disponible cuando se cargue el primer video
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* Contadores */}
+                <div className="flex justify-center gap-12 mt-12 py-8 border-y border-white/10">
+                    <div className="text-center">
+                        <div className="text-4xl md:text-5xl font-black text-white mb-2">{totalInscritos}</div>
+                        <div className="text-sm md:text-base text-neutral-400 uppercase tracking-widest font-bold">Inscritos</div>
+                    </div>
+                    <div className="w-px bg-white/10" />
+                    <div className="text-center">
+                        <div className="text-4xl md:text-5xl font-black text-brand-purple mb-2">{totalConcursantes}</div>
+                        <div className="text-sm md:text-base text-brand-purple/70 uppercase tracking-widest font-bold">Concursantes</div>
                     </div>
                 </div>
 
