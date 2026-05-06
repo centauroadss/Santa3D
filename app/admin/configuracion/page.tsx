@@ -20,7 +20,8 @@ export default function ConfiguracionAdminPage() {
         costo_ambas_categorias: '10',
         pago_banco: '',
         pago_cedula: '',
-        pago_telefono: ''
+        pago_telefono: '',
+        emails_bcc_general: ''
     });
     
     const [historico, setHistorico] = useState<any[]>([]);
@@ -218,6 +219,20 @@ export default function ConfiguracionAdminPage() {
                             </div>
                         </div>
                         <p className="text-xs text-gray-500 mt-2">Estos datos se mostrarán en la página de pago como información de la cuenta destino.</p>
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Configuración de Correos</h2>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Correos en Copia Oculta (BCC) Globales</label>
+                            <Input
+                                type="text"
+                                value={costos.emails_bcc_general}
+                                onChange={(e) => setCostos({ ...costos, emails_bcc_general: e.target.value })}
+                                placeholder="ejemplo@correo.com, otro@correo.com"
+                            />
+                            <p className="text-xs text-gray-500 mt-2">Estos correos recibirán una copia oculta de todas las notificaciones del sistema (inscripciones, rechazos, validaciones). Separa varios correos con comas.</p>
+                        </div>
                     </div>
 
                     <div className="pt-4 flex justify-end">

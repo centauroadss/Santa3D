@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         const configs = await prisma.configConcurso.findMany({
             where: {
                 clave: {
-                    in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono']
+                    in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono', 'emails_bcc_general']
                 }
             }
         });
@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
             costo_ambas_categorias: configMap['costo_ambas_categorias'] || '10',
             pago_banco: configMap['pago_banco'] || 'Banesco',
             pago_cedula: configMap['pago_cedula'] || 'J123456789',
-            pago_telefono: configMap['pago_telefono'] || '04140000000'
+            pago_telefono: configMap['pago_telefono'] || '04140000000',
+            emails_bcc_general: configMap['emails_bcc_general'] || 'mercadeo@centauroads.com'
         };
 
         return NextResponse.json({ success: true, data: finalConfig }, {
@@ -95,6 +96,15 @@ export async function PUT(request: NextRequest) {
                 where: { clave: 'pago_telefono' },
                 update: { valor: pago_telefono.toString() },
                 create: { clave: 'pago_telefono', valor: pago_telefono.toString(), descripcion: 'Teléfono receptor de pago móvil' }
+            });
+        }
+
+        // Upsert emails_bcc_general
+        if (body.emails_bcc_general !== undefined) {
+            await prisma.configConcurso.upsert({
+                where: { clave: 'emails_bcc_general' },
+                update: { valor: body.emails_bcc_general.toString() },
+                create: { clave: 'emails_bcc_general', valor: body.emails_bcc_general.toString(), descripcion: 'Correos a los que enviar copia oculta (BCC) separados por coma' }
             });
         }
 

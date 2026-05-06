@@ -185,11 +185,19 @@ export async function POST(req: Request) {
       console.error("No se pudo cargar la plantilla de la BD", e);
     }
 
+    let bccEmails = ['mercadeo@centauroads.com'];
+    try {
+      const bccConfig = await prisma.configConcurso.findUnique({ where: { clave: 'emails_bcc_general' } });
+      if (bccConfig && bccConfig.valor) {
+        bccEmails = bccConfig.valor.split(',').map(e => e.trim()).filter(e => e);
+      }
+    } catch(e) {}
+
     if (process.env.RESEND_API_KEY) {
       await resend.emails.send({
         from: 'Copa 2026 <no-reply@centauroads.com>',
         to: email,
-        bcc: ['mercadeo@centauroads.com'],
+        bcc: bccEmails,
         subject: emailSubject,
         html: emailHtml,
         attachments: [

@@ -19,14 +19,14 @@ export async function validarComprobanteOcr(
 ): Promise<OcrResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.warn("Falta ANTHROPIC_API_KEY, simulando éxito en desarrollo...");
+    console.warn("Falta ANTHROPIC_API_KEY. No se puede validar el comprobante.");
     return {
-      isValid: true,
-      montoDetectado: montoEsperado,
-      referenciaDetectada: referenciaEsperada,
-      bancoDetectado: "Bancamiga",
-      rawJson: { mock: true },
-      confidence: 1.0
+      isValid: false,
+      montoDetectado: null,
+      referenciaDetectada: null,
+      bancoDetectado: null,
+      rawJson: { error: "El sistema OCR no está configurado (Falta ANTHROPIC_API_KEY)." },
+      confidence: 0
     };
   }
 
