@@ -66,9 +66,9 @@ export default function InscripcionFormB({ initialData, onBack, onSubmit, isLoad
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/jpeg': [],
-      'image/png': [],
-      'application/pdf': []
+      'image/jpeg': ['.jpeg', '.jpg'],
+      'image/png': ['.png'],
+      'application/pdf': ['.pdf']
     },
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024 // 5MB

@@ -28,7 +28,9 @@ export default function InscripcionWizard({ tasaBcv, costoUnaCategoria, costoAmb
   const handleFormASubmit = (data: FormAData) => {
     setFormDataA(data);
     setStep('B');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleFormBSubmit = async (dataB: FormBData) => {
@@ -122,7 +124,9 @@ export default function InscripcionWizard({ tasaBcv, costoUnaCategoria, costoAmb
               onBack={() => {
                 setStep('A');
                 setError(null);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
               }}
               onSubmit={handleFormBSubmit}
               isLoading={isLoading}
