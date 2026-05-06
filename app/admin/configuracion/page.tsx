@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
-import { Save, Settings } from 'lucide-react';
+import { Save, Settings, RefreshCw } from 'lucide-react';
 
 export default function ConfiguracionAdminPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
@@ -83,6 +84,29 @@ export default function ConfiguracionAdminPage() {
             setError(err.response?.data?.error || err.message);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSyncBCV = async () => {
+        setSyncing(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            const token = localStorage.getItem('admin_token');
+            const res = await axios.post('/api/admin/bcv-historico', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                setSuccess('Tasa BCV sincronizada exitosamente con el último valor oficial.');
+                setTimeout(() => setSuccess(null), 3000);
+                fetchHistorico();
+            } else {
+                setError(res.data.error);
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.error || err.message);
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -208,7 +232,17 @@ export default function ConfiguracionAdminPage() {
             </Card>
 
             <div className="mt-12">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Auditoría: Histórico de Tasas BCV</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-gray-800">Auditoría: Histórico de Tasas BCV</h2>
+                    <button
+                        onClick={handleSyncBCV}
+                        disabled={syncing}
+                        className="bg-brand-purple/10 text-brand-purple px-4 py-2 rounded-lg font-medium hover:bg-brand-purple/20 transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                        <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
+                        {syncing ? 'Sincronizando...' : 'Sincronizar BCV Ahora'}
+                    </button>
+                </div>
                 <Card className="overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
