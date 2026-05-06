@@ -153,7 +153,7 @@ export default function EmailConfigAndLogs() {
                             {saving ? 'Guardando...' : 'Guardar Enlaces'}
                         </button>
                         {message && (
-                            <span className={\`text-sm font-medium \${message.includes('Error') ? 'text-red-600' : 'text-green-600'}\`}>
+                            <span className={`text-sm font-medium ${message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
                                 {message}
                             </span>
                         )}
@@ -202,7 +202,7 @@ export default function EmailConfigAndLogs() {
                                         <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-md">{log.tipo}</span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={\`px-2 inline-flex text-xs leading-5 font-semibold rounded-full \${getStatusColor(log.status)}\`}>
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(log.status)}`}>
                                             {log.status}
                                         </span>
                                     </td>

@@ -25,7 +25,7 @@ export default function UploadVideoPage({ params }: { params: { token: string } 
 
         const verifyToken = async () => {
             try {
-                const res = await fetch(\`/api/copa2026/upload/verify-token?token=\${token}\`);
+                const res = await fetch(`/api/copa2026/upload/verify-token?token=${token}`);
                 const data = await res.json();
 
                 if (res.status === 401) {

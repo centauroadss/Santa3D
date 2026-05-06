@@ -16,7 +16,7 @@ export interface VideoAnalysis {
 }
 
 export async function analyzeVideo(url: string): Promise<VideoAnalysis> {
-    const tempFile = path.join(os.tmpdir(), \`video-\${Date.now()}.tmp\`);
+    const tempFile = path.join(os.tmpdir(), `video-${Date.now()}.tmp`);
     
     try {
         // 1. Download file temporarily
@@ -35,7 +35,7 @@ export async function analyzeVideo(url: string): Promise<VideoAnalysis> {
         });
 
         // 2. Run ffprobe
-        const command = \`ffprobe -v quiet -print_format json -show_streams -show_format "\${tempFile}"\`;
+        const command = `ffprobe -v quiet -print_format json -show_streams -show_format "${tempFile}"`;
         const { stdout } = await execAsync(command);
         const data = JSON.parse(stdout);
 
@@ -46,7 +46,7 @@ export async function analyzeVideo(url: string): Promise<VideoAnalysis> {
             throw new Error('No video stream found in file');
         }
 
-        const resolution = \`\${videoStream.width}x\${videoStream.height}\`;
+        const resolution = `${videoStream.width}x${videoStream.height}`;
         const durationSeg = parseFloat(videoStream.duration || formatData.duration || '0');
         
         let fps = 0;
@@ -60,16 +60,16 @@ export async function analyzeVideo(url: string): Promise<VideoAnalysis> {
         // 3. Generate Warnings
         const warnings: string[] = [];
         if (resolution !== '1024x2048') {
-            warnings.push(\`Resolución incorrecta: Se esperaba 1024x2048, pero se recibió \${resolution}.\`);
+            warnings.push(`Resolución incorrecta: Se esperaba 1024x2048, pero se recibió ${resolution}.`);
         }
         if (durationSeg > 31) {
-            warnings.push(\`Duración excesiva: Se esperaban 30s, pero el video dura \${durationSeg.toFixed(1)}s.\`);
+            warnings.push(`Duración excesiva: Se esperaban 30s, pero el video dura ${durationSeg.toFixed(1)}s.`);
         }
         if (Math.abs(fps - 30) > 1) { // Allow slight variations like 29.97
-            warnings.push(\`FPS incorrectos: Se esperaban 30fps, pero se recibieron \${fps.toFixed(1)}fps.\`);
+            warnings.push(`FPS incorrectos: Se esperaban 30fps, pero se recibieron ${fps.toFixed(1)}fps.`);
         }
         if (!formato.includes('mp4')) {
-            warnings.push(\`Formato incorrecto: Se esperaba video/mp4, pero se detectó \${formato}.\`);
+            warnings.push(`Formato incorrecto: Se esperaba video/mp4, pero se detectó ${formato}.`);
         }
 
         return {

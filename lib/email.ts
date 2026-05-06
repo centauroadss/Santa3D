@@ -325,12 +325,12 @@ export async function sendJudgeThankYouEmail(email: string, nombre: string) {
 }
 
 export async function sendRegistrationEmail(email: string, nombre: string): Promise<boolean> {
-  const html = \`<!DOCTYPE html><html><body><h1>Registro</h1><p>Hola \${nombre}</p></body></html>\`;
+  const html = `<!DOCTYPE html><html><body><h1>Registro</h1><p>Hola ${nombre}</p></body></html>`;
   return await sendEmail({ to: email, subject: 'Registro Santa 3D', html, tipo: 'REGISTRO_GENERAL' });
 }
 
 export async function sendPasswordResetEmail(email: string, nameOrToken: string, password?: string) {
-  const html = \`<h1>Reset Password</h1><p>Hola \${nameOrToken}, tu nueva clave es \${password || 'Token'}</p>\`;
+  const html = `<h1>Reset Password</h1><p>Hola ${nameOrToken}, tu nueva clave es ${password || 'Token'}</p>`;
   return await sendEmail({ to: email, subject: 'Restablecer Clave', html, tipo: 'RESET_PASSWORD' });
 }
 
