@@ -35,13 +35,19 @@ export async function GET(request: NextRequest) {
             return {
                 id: h.id,
                 fecha: h.fecha,
-                tasaUsdBs: tasa,
+                tasaUsdBs: tasa.toFixed(2),
                 costoUnaCategoriaBs: (tasa * costoUnaCategoria).toFixed(2),
                 costoAmbasCategoriasBs: (tasa * costoAmbasCategorias).toFixed(2)
             };
         });
 
-        return NextResponse.json({ success: true, data });
+        return NextResponse.json({ success: true, data }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+            }
+        });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -90,7 +96,13 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        return NextResponse.json({ success: true, data: record });
+        return NextResponse.json({ success: true, data: record }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+            }
+        });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
