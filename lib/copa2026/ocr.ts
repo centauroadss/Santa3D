@@ -12,7 +12,10 @@ interface OcrResult {
 export async function validarComprobanteOcr(
   base64Image: string, 
   montoEsperado: number, 
-  referenciaEsperada: string
+  referenciaEsperada: string,
+  nombre: string,
+  apellido: string,
+  cedula: string
 ): Promise<OcrResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -35,9 +38,6 @@ export async function validarComprobanteOcr(
 
     const mimeType = base64Image.includes('pdf') ? 'application/pdf' : 'image/jpeg';
     
-    // Si es PDF, Anthropic Claude 3.5 Sonnet soporta PDF via Base64, pero simplificaremos asumiendo imagen o PDF convertido a imagen.
-    // Para asegurar compatibilidad con la API vision de Claude, usaremos image/jpeg.
-    
     const response = await axios.post(
       'https://api.anthropic.com/v1/messages',
       {
@@ -58,12 +58,14 @@ export async function validarComprobanteOcr(
               {
                 type: "text",
                 text: `Extrae la información de este comprobante de pago móvil venezolano.
+INSTRUCCIÓN CRÍTICA: NO calcules ni infieras montos. Debes extraer exactamente el número que aparece como el monto transferido en el comprobante.
 Devuelve EXACTAMENTE un objeto JSON válido sin texto adicional (ni markdown) con esta estructura:
 {
   "monto": 123.45,
   "referencia": "últimos 6 digitos numéricos",
   "banco": "Nombre del banco",
-  "fecha": "YYYY-MM-DD"
+  "fecha": "YYYY-MM-DD",
+  "concepto": "Texto literal que aparece en concepto o descripción u observación"
 }
 Si no encuentras un valor, pon null.`
               }
@@ -88,22 +90,49 @@ Si no encuentras un valor, pon null.`
 
     const montoDetectado = parsed.monto;
     const referenciaDetectada = parsed.referencia;
+    const conceptoDetectado = (parsed.concepto || "").toLowerCase();
     
     // Validar lógicamente
-    const isMontoValid = montoDetectado && Math.abs(montoDetectado - montoEsperado) < 1.0; // Tolerancia 1 Bs
-    const isRefValid = referenciaEsperada && referenciaDetectada && referenciaDetectada.endsWith(referenciaEsperada);
+    const isMontoValid = montoDetectado !== null && montoDetectado !== undefined && Math.abs(montoDetectado - montoEsperado) < 1.0; // Tolerancia 1 Bs para redondeos
     
-    // En este concurso el OCR da el "Check" si el monto coincide. 
-    // La referencia es un plus pero exigiremos el monto.
-    const isValid = !!isMontoValid;
+    if (!isMontoValid) {
+      return {
+        isValid: false,
+        montoDetectado,
+        referenciaDetectada,
+        bancoDetectado: parsed.banco,
+        rawJson: { ...parsed, error: `Monto incorrecto. Detectado: ${montoDetectado}, Esperado: ${montoEsperado}` },
+        confidence: 0.95
+      };
+    }
+
+    // Validar concepto
+    const nombreParts = nombre.toLowerCase().split(' ');
+    const apellidoParts = apellido.toLowerCase().split(' ');
+    const cedulaRaw = cedula.replace(/[^0-9]/g, '');
+
+    const hasNameMatch = nombreParts.some(p => p.length > 2 && conceptoDetectado.includes(p)) || 
+                         apellidoParts.some(p => p.length > 2 && conceptoDetectado.includes(p));
+    const hasCedulaMatch = conceptoDetectado.includes(cedulaRaw);
+
+    if (!hasNameMatch && !hasCedulaMatch) {
+       return {
+        isValid: false,
+        montoDetectado,
+        referenciaDetectada,
+        bancoDetectado: parsed.banco,
+        rawJson: { ...parsed, error: `El concepto del pago no incluye el nombre ni la cédula del participante. Concepto detectado: "${conceptoDetectado}"` },
+        confidence: 0.95
+      };
+    }
 
     return {
-      isValid,
+      isValid: true,
       montoDetectado,
       referenciaDetectada,
       bancoDetectado: parsed.banco,
       rawJson: parsed,
-      confidence: isValid ? 0.95 : 0.5
+      confidence: 0.95
     };
 
   } catch (error) {

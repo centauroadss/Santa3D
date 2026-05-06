@@ -71,8 +71,13 @@ export default function InscripcionWizard({
       
       // Datos Form A
       Object.entries(formDataA).forEach(([key, value]) => {
-        if (value !== undefined) formData.append(key, value.toString());
+        if (value !== undefined && key !== 'fotoPerfilFile') {
+          formData.append(key, value.toString());
+        }
       });
+      if (formDataA.fotoPerfilFile) {
+        formData.append('fotoPerfilFile', formDataA.fotoPerfilFile);
+      }
 
       // Datos Form B
       formData.append('telefonoPago', dataB.telefonoPago);
@@ -86,6 +91,11 @@ export default function InscripcionWizard({
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
+      // Guardar email para confirmación
+      if (formDataA.email) {
+        sessionStorage.setItem('copa2026_registered_email', formDataA.email);
+      }
+
       // Redirigir a pantalla de confirmación
       router.push('/copa2026/inscripcion/confirmacion');
       

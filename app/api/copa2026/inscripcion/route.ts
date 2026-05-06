@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validarComprobanteOcr } from '@/lib/copa2026/ocr';
+import { validateProfilePhoto } from '@/lib/copa2026/faceValidation';
 import { v4 as uuidv4 } from 'uuid';
 import { Resend } from 'resend';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import crypto from 'crypto';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_mock');
 const s3Client = new S3Client({
@@ -25,6 +27,7 @@ export async function POST(req: Request) {
     const telefono = formData.get('telefono') as string;
     const categoria = formData.get('categoria') as 'RENDER' | 'IA' | 'AMBAS';
     
+    const fotoPerfilFile = formData.get('fotoPerfilFile') as File;
     const telefonoPago = formData.get('telefonoPago') as string;
     const cedulaPago = formData.get('cedulaPago') as string;
     const bancoOrigen = formData.get('bancoOrigen') as string;
@@ -33,6 +36,37 @@ export async function POST(req: Request) {
 
     if (!comprobanteFile) {
       return NextResponse.json({ error: 'Falta el comprobante de pago.' }, { status: 400 });
+    }
+    
+    if (!fotoPerfilFile) {
+      return NextResponse.json({ error: 'Falta la foto de perfil.' }, { status: 400 });
+    }
+
+    // Hash comprobante y validación de duplicados
+    const arrayBufferComprobante = await comprobanteFile.arrayBuffer();
+    const bufferComprobante = Buffer.from(arrayBufferComprobante);
+    const fileHash = crypto.createHash('sha256').update(bufferComprobante).digest('hex');
+
+    const pagoExistente = await prisma.pagoMovil.findUnique({
+      where: { fileHash }
+    });
+
+    if (pagoExistente) {
+      return NextResponse.json({ 
+        error: 'Este comprobante de pago ya fue utilizado en otra inscripción. Intento de fraude detectado.' 
+      }, { status: 400 });
+    }
+
+    // Validación de Foto Perfil
+    const arrayBufferFoto = await fotoPerfilFile.arrayBuffer();
+    const bufferFoto = Buffer.from(arrayBufferFoto);
+    const base64Foto = bufferFoto.toString('base64');
+    
+    const faceValidation = await validateProfilePhoto(base64Foto);
+    if (!faceValidation.isValid) {
+      return NextResponse.json({ 
+        error: `La foto de perfil no es válida: ${faceValidation.reason || 'Debe ser un rostro humano claro y de una sola persona.'}` 
+      }, { status: 400 });
     }
 
     // Obtener costos de DB
@@ -51,30 +85,42 @@ export async function POST(req: Request) {
     const montoUsd = categoria === 'AMBAS' ? costoAmbasCategorias : costoUnaCategoria;
     const montoEsperadoBs = tasaBcv * montoUsd;
 
-    // Convertir file a base64 para OCR
-    const arrayBuffer = await comprobanteFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Image = buffer.toString('base64');
+    const base64Image = bufferComprobante.toString('base64');
 
     // 1. OCR Validación
-    const ocrResult = await validarComprobanteOcr(base64Image, montoEsperadoBs, referencia);
+    const ocrResult = await validarComprobanteOcr(base64Image, montoEsperadoBs, referencia, nombre, apellido, cedulaIdentidad);
     
+    // Si OCR falla por monto u otro motivo
     if (!ocrResult.isValid) {
       return NextResponse.json({ 
-        error: `El OCR no pudo validar el monto de ${montoEsperadoBs.toFixed(2)} Bs en la imagen. Por favor sube un comprobante más claro.`
+        error: `Error de Validación: ${ocrResult.rawJson?.error || `El OCR no pudo validar el monto de ${montoEsperadoBs.toFixed(2)} Bs o el concepto en la imagen.`} Por favor, verifica y vuelve a intentarlo.`
       }, { status: 400 });
     }
+    
+    // Aquí implementamos la evaluación blanda del Concepto
+    // No bloqueamos, pero se podría registrar un warning si es necesario. (OCR extrae rawJson)
 
-    // 2. Subir imagen a S3 (simulado si no hay keys)
-    const fileExt = comprobanteFile.name.split('.').pop();
-    const fileName = `pagos_2026/${Date.now()}-${uuidv4()}.${fileExt}`;
+    // 2. Subir imágenes a S3
+    const compExt = comprobanteFile.name.split('.').pop();
+    const fileNameComprobante = `pagos_2026/${Date.now()}-${uuidv4()}.${compExt}`;
+    
+    const fotoExt = fotoPerfilFile.name.split('.').pop();
+    const fileNameFoto = `perfiles_2026/${Date.now()}-${uuidv4()}.${fotoExt}`;
     
     if (process.env.AWS_ACCESS_KEY_ID) {
+      // Subir comprobante
       await s3Client.send(new PutObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: fileName,
-        Body: buffer,
+        Key: fileNameComprobante,
+        Body: bufferComprobante,
         ContentType: comprobanteFile.type,
+      }));
+      // Subir foto
+      await s3Client.send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: fileNameFoto,
+        Body: bufferFoto,
+        ContentType: fotoPerfilFile.type,
       }));
     }
 
@@ -93,6 +139,7 @@ export async function POST(req: Request) {
         categoria,
         tokenVideo,
         tokenExpiry,
+        fotoPerfilPath: fileNameFoto,
         estatusInscripcion: 'APROBADO', // Se aprueba automático por el OCR
         pago: {
           create: {
@@ -102,7 +149,8 @@ export async function POST(req: Request) {
             montoCapturadoBs: ocrResult.montoDetectado || montoEsperadoBs,
             montoEsperadoBs,
             tasaBcvUsada: tasaBcv,
-            comprobantePath: fileName,
+            comprobantePath: fileNameComprobante,
+            fileHash,
             ocrResultadoRaw: ocrResult.rawJson,
             ocrConfianza: ocrResult.confidence,
             estatusPago: 'VALIDADO'
@@ -141,12 +189,13 @@ export async function POST(req: Request) {
       await resend.emails.send({
         from: 'Copa 2026 <no-reply@centauroads.com>',
         to: email,
+        bcc: ['mercadeo@centauroads.com'],
         subject: emailSubject,
         html: emailHtml,
         attachments: [
           {
-            filename: `pago_${referencia}.${fileExt}`,
-            content: buffer
+            filename: `pago_${referencia}.${compExt}`,
+            content: bufferComprobante
           }
         ]
       });

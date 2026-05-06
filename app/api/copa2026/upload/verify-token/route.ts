@@ -18,7 +18,8 @@ export async function GET(req: Request) {
         const inscripcion = await prisma.inscripcionCopa2026.findUnique({
             where: { tokenVideo: token },
             include: {
-                videos: true
+                videos: true,
+                pago: true
             }
         });
 
@@ -30,15 +31,22 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'El plazo de carga de videos ha vencido.' }, { status: 410 });
         }
 
+        const participanteData = {
+            nombre: inscripcion.nombre,
+            apellido: inscripcion.apellido,
+            categoria: inscripcion.categoria,
+            cedulaIdentidad: inscripcion.cedulaIdentidad,
+            fotoPerfilPath: inscripcion.fotoPerfilPath,
+            estatusPago: inscripcion.pago?.estatusPago,
+            referenciaPago: inscripcion.pago?.referencia,
+            comprobantePath: inscripcion.pago?.comprobantePath,
+        };
+
         if (inscripcion.estatusToken === 'USADO' || inscripcion.estatusInscripcion === 'COMPLETADO') {
             return NextResponse.json({
                 success: true,
                 isLoaded: true,
-                participante: {
-                    nombre: inscripcion.nombre,
-                    apellido: inscripcion.apellido,
-                    categoria: inscripcion.categoria,
-                },
+                participante: participanteData,
                 videos: inscripcion.videos
             }, { status: 200 });
         }
@@ -46,11 +54,7 @@ export async function GET(req: Request) {
         return NextResponse.json({
             success: true,
             isLoaded: false,
-            participante: {
-                nombre: inscripcion.nombre,
-                apellido: inscripcion.apellido,
-                categoria: inscripcion.categoria,
-            }
+            participante: participanteData
         }, { status: 200 });
 
     } catch (error) {

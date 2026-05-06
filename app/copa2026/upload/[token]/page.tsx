@@ -128,20 +128,52 @@ export default function UploadVideoPage({ params }: { params: { token: string } 
 
                         {status === 'pending' && participante && !confirming && !confirmSuccess ? (
                             <div>
-                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded-r-md">
-                                    <div className="flex">
-                                        <div className="flex-shrink-0">
-                                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                            </svg>
+                                <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8 shadow-sm flex flex-col md:flex-row gap-6 items-center md:items-start text-left">
+                                    {participante.fotoPerfilPath ? (
+                                        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-[#85439a]/20 shrink-0">
+                                            <Image 
+                                                src={`https://santa3d.sfo3.digitaloceanspaces.com/${participante.fotoPerfilPath}`} 
+                                                alt="Foto de perfil" 
+                                                fill 
+                                                className="object-cover"
+                                            />
                                         </div>
-                                        <div className="ml-3">
-                                            <h3 className="text-sm font-medium text-blue-800">Hola, {participante.nombre} {participante.apellido}</h3>
-                                            <div className="mt-2 text-sm text-blue-700">
-                                                <p>Estás cargando el video para la categoría <strong>{participante.categoria}</strong>.</p>
-                                                <p className="mt-1">Recuerda que el video debe pesar menos de 500MB.</p>
+                                    ) : (
+                                        <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-4 border-gray-200 shrink-0">
+                                            <span className="text-4xl text-gray-400">👤</span>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="flex-1 w-full">
+                                        <h3 className="text-2xl font-black text-gray-900 uppercase">
+                                            {participante.nombre} {participante.apellido}
+                                        </h3>
+                                        <p className="text-gray-500 font-mono text-sm mb-4">C.I: {participante.cedulaIdentidad}</p>
+                                        
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                                <p className="text-xs text-gray-500 uppercase font-bold">Categoría</p>
+                                                <p className="text-[#85439a] font-bold">{participante.categoria}</p>
+                                            </div>
+                                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                                <p className="text-xs text-gray-500 uppercase font-bold">Estatus de Pago</p>
+                                                <div className="flex items-center gap-2">
+                                                    {participante.estatusPago === 'VALIDADO' || participante.estatusPago === 'APROBADO' ? (
+                                                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                                    ) : (
+                                                        <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                                    )}
+                                                    <p className={`font-bold ${participante.estatusPago === 'VALIDADO' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                        {participante.estatusPago || 'Pendiente'}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
+                                        {participante.referenciaPago && (
+                                            <p className="text-xs text-gray-400 mt-3 text-right">
+                                                Ref: {participante.referenciaPago}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 

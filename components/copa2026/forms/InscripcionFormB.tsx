@@ -8,7 +8,7 @@ import { UploadCloud, ChevronLeft, CheckCircle2 } from 'lucide-react';
 
 const formSchema = z.object({
   telefonoPago: z.string().regex(/^(412|422|414|424|416|426)\d{7}$/, 'Debe tener 10 dígitos y empezar con un prefijo válido (ej: 412, 414, etc.) sin el 0'),
-  cedulaPago: z.string().regex(/^[VEJP]-\d+$/, 'Formato inválido (Ej: V-12345678)'),
+  cedulaPago: z.string().regex(/^[VEP]-\d{1,9}$/, 'Debe empezar por V-, E-, o P- seguido de máximo 9 números (Ej: V-12345678)'),
   bancoOrigen: z.string().min(4, 'Selecciona un banco'),
   referencia: z.string().min(4, 'Ingresa los últimos dígitos de referencia'),
   comprobanteFile: z.any().refine((file) => file != null, 'Debes subir un comprobante')
@@ -196,6 +196,14 @@ export default function InscripcionFormB({
             )}
           </div>
           {errors.comprobanteFile && <p className="text-red-500 text-xs mt-1">{errors.comprobanteFile?.message?.toString()}</p>}
+        </div>
+
+        <div className="bg-red-500/10 border-2 border-red-500 rounded-xl p-6 text-center">
+          <p className="text-red-500 font-black text-xl uppercase mb-2">¡NOTA IMPORTANTE!</p>
+          <p className="text-red-400 font-bold text-sm md:text-base">
+            El campo "Concepto", "Descripción" u "Observación" de tu transferencia 
+            SIEMPRE debe contener el NOMBRE y número de CÉDULA del participante.
+          </p>
         </div>
       </div>
 

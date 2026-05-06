@@ -16,6 +16,22 @@ export default async function RegistroPage() {
     orderBy: { fecha: 'desc' }
   });
   const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 55.45; // Fallback
+  // Obtener Configuración Dinámica de Costos y Banco
+  const configs = await prisma.configConcurso.findMany({
+    where: {
+      clave: { in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono'] }
+    }
+  });
+
+  const configMap = configs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
+  const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
+  const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
+  
+  const configPago = {
+    banco: configMap['pago_banco'] || 'Banesco',
+    cedula: configMap['pago_cedula'] || 'J-123456789',
+    telefono: configMap['pago_telefono'] || '04140000000'
+  };
 
   if (isClosed) {
     return (
@@ -59,7 +75,12 @@ export default async function RegistroPage() {
         </div>
 
         {/* Wizard */}
-        <InscripcionWizard tasaBcv={tasaBcv} />
+        <InscripcionWizard 
+          tasaBcv={tasaBcv} 
+          costoUnaCategoria={costoUnaCategoria}
+          costoAmbasCategorias={costoAmbasCategorias}
+          configPago={configPago}
+        />
       </div>
     </div>
   );
