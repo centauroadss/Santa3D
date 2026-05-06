@@ -157,7 +157,7 @@ export default function InstagramConfigPage() {
         const paddingClass = type === 'story' ? 'py-12 px-6' : 'py-8 px-8';
         return (
             // Add ID for downloading
-            <div id={id} className={`\${containerClass} relative overflow-hidden flex flex-col items-center justify-between \${paddingClass} shadow-2xl transition-all select-none`}>
+            <div id={id} className={`${containerClass} relative overflow-hidden flex flex-col items-center justify-between ${paddingClass} shadow-2xl transition-all select-none`}>
                 {/* Background Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#4a1d5c] via-[#6d2a8a] to-[#F26522] z-0"></div>
                 

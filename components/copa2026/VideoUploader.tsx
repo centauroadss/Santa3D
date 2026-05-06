@@ -28,7 +28,7 @@ export default function VideoUploader({ token, onUploadSuccess }: VideoUploaderP
         }
 
         if (file.size > MAX_FILE_SIZE) {
-            setError(\`El archivo excede el tamaño máximo permitido (500 MB). Tamaño actual: \${(file.size / 1024 / 1024).toFixed(2)} MB\`);
+            setError(`El archivo excede el tamaño máximo permitido (500 MB). Tamaño actual: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
             return;
         }
 
@@ -118,11 +118,11 @@ export default function VideoUploader({ token, onUploadSuccess }: VideoUploaderP
         <div className="w-full">
             <div 
                 {...getRootProps()} 
-                className={\`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors \${
+                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
                     isDragActive ? 'border-[#85439a] bg-[#85439a]/5' : 
                     isDragReject ? 'border-red-500 bg-red-50' : 
                     'border-gray-300 hover:border-[#85439a] hover:bg-gray-50'
-                } \${uploading ? 'opacity-50 pointer-events-none' : ''}\`}
+                } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <input {...getInputProps()} />
                 
@@ -144,7 +144,7 @@ export default function VideoUploader({ token, onUploadSuccess }: VideoUploaderP
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#85439a]"></div>
                         <p className="text-gray-700 font-medium">Subiendo video... {progress}%</p>
                         <div className="w-full max-w-xs bg-gray-200 rounded-full h-2.5 mt-2">
-                            <div className="bg-[#85439a] h-2.5 rounded-full transition-all duration-300" style={{ width: \`\${progress}%\` }}></div>
+                            <div className="bg-[#85439a] h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                         </div>
                         <p className="text-xs text-gray-500 mt-2">Por favor, no cierres esta pestaña</p>
                     </div>
