@@ -43,7 +43,12 @@ interface Props {
   }
 }
 
-export default function InscripcionWizard({ tasaBcv, costoUnaCategoria, costoAmbasCategorias, configPago }: Props) {
+export default function InscripcionWizard({ 
+  tasaBcv, 
+  costoUnaCategoria = 5, 
+  costoAmbasCategorias = 10, 
+  configPago = { banco: 'Banesco', cedula: 'J-123456789', telefono: '04140000000' } 
+}: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('A');
   const [formDataA, setFormDataA] = useState<Partial<FormAData>>({});

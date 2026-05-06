@@ -46,7 +46,17 @@ const BANCOS_MOCK = [
   { codigo: '0191', nombre: 'BNC Nacional de Crédito' },
 ];
 
-export default function InscripcionFormB({ initialData, onBack, onSubmit, isLoading, tasaBcv, costoUnaCategoria, costoAmbasCategorias, categoria, configPago }: Props) {
+export default function InscripcionFormB({ 
+  initialData, 
+  onBack, 
+  onSubmit, 
+  isLoading, 
+  tasaBcv, 
+  costoUnaCategoria = 5, 
+  costoAmbasCategorias = 10, 
+  categoria, 
+  configPago = { banco: 'Banesco', cedula: 'J-123456789', telefono: '04140000000' } 
+}: Props) {
   const [file, setFile] = useState<File | null>(initialData?.comprobanteFile || null);
   
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormBData>({
@@ -93,15 +103,15 @@ export default function InscripcionFormB({ initialData, onBack, onSubmit, isLoad
         <div className="mt-6 pt-6 border-t border-brand-purple/20 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
           <div>
             <p className="text-xs text-gray-500 uppercase font-bold">Banco</p>
-            <p className="text-white font-medium">{configPago.banco}</p>
+            <p className="text-white font-medium">{configPago?.banco}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase font-bold">Teléfono</p>
-            <p className="text-white font-medium">{configPago.telefono}</p>
+            <p className="text-white font-medium">{configPago?.telefono}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase font-bold">Cédula/RIF</p>
-            <p className="text-white font-medium">{configPago.cedula}</p>
+            <p className="text-white font-medium">{configPago?.cedula}</p>
           </div>
         </div>
       </div>
