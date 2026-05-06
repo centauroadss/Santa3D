@@ -12,6 +12,8 @@ export default function ConfiguracionAdminPage() {
     const [syncing, setSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [syncError, setSyncError] = useState<string | null>(null);
+    const [syncSuccess, setSyncSuccess] = useState<string | null>(null);
 
     const [costos, setCostos] = useState({
         costo_una_categoria: '5',
@@ -89,22 +91,22 @@ export default function ConfiguracionAdminPage() {
 
     const handleSyncBCV = async () => {
         setSyncing(true);
-        setError(null);
-        setSuccess(null);
+        setSyncError(null);
+        setSyncSuccess(null);
         try {
             const token = localStorage.getItem('admin_token');
             const res = await axios.post('/api/admin/bcv-historico', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
-                setSuccess('Tasa BCV sincronizada exitosamente con el último valor oficial.');
-                setTimeout(() => setSuccess(null), 3000);
+                setSyncSuccess('Tasa BCV sincronizada exitosamente.');
+                setTimeout(() => setSyncSuccess(null), 3000);
                 fetchHistorico();
             } else {
-                setError(res.data.error);
+                setSyncError(res.data.error);
             }
         } catch (err: any) {
-            setError(err.response?.data?.error || err.message);
+            setSyncError(err.response?.data?.error || err.message);
         } finally {
             setSyncing(false);
         }
@@ -234,14 +236,18 @@ export default function ConfiguracionAdminPage() {
             <div className="mt-12">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800">Auditoría: Histórico de Tasas BCV</h2>
-                    <button
-                        onClick={handleSyncBCV}
-                        disabled={syncing}
-                        className="bg-brand-purple/10 text-brand-purple px-4 py-2 rounded-lg font-medium hover:bg-brand-purple/20 transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                        <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
-                        {syncing ? 'Sincronizando...' : 'Sincronizar BCV Ahora'}
-                    </button>
+                    <div className="flex items-center gap-4">
+                        {syncError && <span className="text-red-500 text-sm font-medium animate-pulse">{syncError}</span>}
+                        {syncSuccess && <span className="text-green-600 text-sm font-medium animate-pulse">{syncSuccess}</span>}
+                        <button
+                            onClick={handleSyncBCV}
+                            disabled={syncing}
+                            className="bg-brand-purple/10 text-brand-purple px-4 py-2 rounded-lg font-medium hover:bg-brand-purple/20 transition-colors flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
+                            {syncing ? 'Sincronizando...' : 'Sincronizar BCV Ahora'}
+                        </button>
+                    </div>
                 </div>
                 <Card className="overflow-hidden">
                     <div className="overflow-x-auto">
