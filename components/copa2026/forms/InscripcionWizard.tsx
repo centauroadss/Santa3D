@@ -5,6 +5,31 @@ import InscripcionFormA, { FormAData } from './InscripcionFormA';
 import InscripcionFormB, { FormBData } from './InscripcionFormB';
 import axios from 'axios';
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 bg-red-900 text-white rounded-xl">
+          <h2 className="font-bold text-xl mb-2">Error de Renderizado:</h2>
+          <pre className="text-xs whitespace-pre-wrap">{this.state.error?.toString()}</pre>
+          <pre className="text-xs whitespace-pre-wrap mt-2 text-gray-400">{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 type Step = 'A' | 'B';
 
 interface Props {
@@ -115,22 +140,24 @@ export default function InscripcionWizard({ tasaBcv, costoUnaCategoria, costoAmb
         
         {step === 'B' && (
           <div className="animate-in slide-in-from-right fade-in duration-300">
-            <InscripcionFormB 
-              tasaBcv={tasaBcv}
-              costoUnaCategoria={costoUnaCategoria}
-              costoAmbasCategorias={costoAmbasCategorias}
-              categoria={formDataA.categoria as 'RENDER' | 'IA' | 'AMBAS' || 'RENDER'}
-              configPago={configPago}
-              onBack={() => {
-                setStep('A');
-                setError(null);
-                setTimeout(() => {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }, 100);
-              }}
-              onSubmit={handleFormBSubmit}
-              isLoading={isLoading}
-            />
+            <ErrorBoundary>
+              <InscripcionFormB 
+                tasaBcv={tasaBcv}
+                costoUnaCategoria={costoUnaCategoria}
+                costoAmbasCategorias={costoAmbasCategorias}
+                categoria={formDataA.categoria as 'RENDER' | 'IA' | 'AMBAS' || 'RENDER'}
+                configPago={configPago}
+                onBack={() => {
+                  setStep('A');
+                  setError(null);
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
+                }}
+                onSubmit={handleFormBSubmit}
+                isLoading={isLoading}
+              />
+            </ErrorBoundary>
           </div>
         )}
       </div>
