@@ -31,7 +31,13 @@ export async function GET(request: NextRequest) {
             pago_telefono: configMap['pago_telefono'] || '04140000000'
         };
 
-        return NextResponse.json({ success: true, data: finalConfig });
+        return NextResponse.json({ success: true, data: finalConfig }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+            }
+        });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
