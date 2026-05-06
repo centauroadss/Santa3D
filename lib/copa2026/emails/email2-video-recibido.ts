@@ -1,4 +1,4 @@
-import { sendEmail } from '@/lib/email-service';
+import { EmailService } from '@/lib/email-service';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -97,7 +97,7 @@ export async function sendEmail2VideoRecibido(
         </div>
         `;
 
-        await sendEmail({
+        await EmailService.send({
             to: emailDestino,
             subject: '✅ Video Recibido Exitosamente - Copa 2026',
             html: emailHtml,
