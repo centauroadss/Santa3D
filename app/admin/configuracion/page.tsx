@@ -275,25 +275,25 @@ export default function ConfiguracionAdminPage() {
                                     <th className="px-6 py-3 font-bold text-brand-purple">Ambas Categorías (${costos.costo_ambas_categorias})</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 text-gray-900">
                                 {historico.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                                        <td colSpan={4} className="px-6 py-4 text-center text-gray-500 font-medium">
                                             No hay registros históricos todavía.
                                         </td>
                                     </tr>
                                 ) : (
-                                    historico.map((item) => (
-                                        <tr key={item.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-3 whitespace-nowrap">
-                                                {new Date(item.fecha).toLocaleDateString('es-VE', {
+                                    historico.map((item, idx) => (
+                                        <tr key={item.id || idx} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-3 whitespace-nowrap text-gray-900">
+                                                {item.fecha ? new Date(item.fecha).toLocaleDateString('es-VE', {
                                                     day: '2-digit', month: '2-digit', year: 'numeric',
                                                     hour: '2-digit', minute: '2-digit'
-                                                })}
+                                                }) : 'Fecha desconocida'}
                                             </td>
-                                            <td className="px-6 py-3 font-medium">{item.tasaUsdBs} Bs/$</td>
-                                            <td className="px-6 py-3 font-bold">{item.costoUnaCategoriaBs} Bs</td>
-                                            <td className="px-6 py-3 font-bold">{item.costoAmbasCategoriasBs} Bs</td>
+                                            <td className="px-6 py-3 font-medium text-gray-900">{item.tasaUsdBs ?? 'N/A'} Bs/$</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{item.costoUnaCategoriaBs ?? 'N/A'} Bs</td>
+                                            <td className="px-6 py-3 font-bold text-gray-900">{item.costoAmbasCategoriasBs ?? 'N/A'} Bs</td>
                                         </tr>
                                     ))
                                 )}
