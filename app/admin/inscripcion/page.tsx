@@ -82,17 +82,17 @@ export default function InscripcionConfigPage() {
         setConfig({ ...config, concursos: newConcursos });
     };
 
-    if (loading) return <div className="p-8 text-white">Cargando configuración...</div>;
+    if (loading) return <div className="p-8 text-gray-900">Cargando configuración...</div>;
 
     return (
-        <div className="p-6 md:p-8 text-white">
+        <div className="p-6 md:p-8 text-gray-900">
             <div className="flex items-center gap-3 mb-8">
                 <div className="p-3 bg-brand-purple/20 text-brand-purple rounded-xl">
                     <Settings size={28} />
                 </div>
                 <div>
                     <h1 className="text-3xl font-black">Configuración de Inscripción</h1>
-                    <p className="text-gray-400">Administra los costos y parámetros de la inscripción al concurso.</p>
+                    <p className="text-gray-600">Administra los costos y parámetros de la inscripción al concurso.</p>
                 </div>
             </div>
 
@@ -115,7 +115,7 @@ export default function InscripcionConfigPage() {
                                 />
                                 <div>
                                     <p className="font-bold">Aplica Costo de Inscripción</p>
-                                    <p className="text-sm text-gray-400">Si se desactiva, la inscripción será gratuita.</p>
+                                    <p className="text-sm text-gray-600">Si se desactiva, la inscripción será gratuita.</p>
                                 </div>
                             </label>
 
@@ -123,7 +123,7 @@ export default function InscripcionConfigPage() {
                                 <>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-300 mb-2">Aplica Para:</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Aplica Para:</label>
                                             <select 
                                                 value={config.alcance}
                                                 onChange={(e) => setConfig({ ...config, alcance: e.target.value as any })}
@@ -135,7 +135,7 @@ export default function InscripcionConfigPage() {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-300 mb-2">Monto (USD):</label>
+                                            <label className="block text-sm font-bold text-gray-700 mb-2">Monto (USD):</label>
                                             <div className="relative">
                                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                                                 <input 
@@ -146,13 +146,13 @@ export default function InscripcionConfigPage() {
                                                     className="w-full bg-[#111] border border-white/10 rounded-lg pl-8 pr-4 py-3 text-white focus:outline-none focus:border-brand-purple font-mono"
                                                 />
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-2">El sistema multiplicará esto por la tasa BCV del día.</p>
+                                            <p className="text-xs text-gray-600 mt-2">El sistema multiplicará esto por la tasa BCV del día.</p>
                                         </div>
                                     </div>
 
                                     <div className="mt-8">
                                         <div className="flex justify-between items-center mb-4">
-                                            <label className="block text-sm font-bold text-gray-300">Concursos Disponibles:</label>
+                                            <label className="block text-sm font-bold text-gray-700">Concursos Disponibles:</label>
                                             <button onClick={addConcurso} className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-colors">
                                                 <Plus size={14} /> Añadir Concurso
                                             </button>
@@ -166,7 +166,7 @@ export default function InscripcionConfigPage() {
                                                             value={c.nombre}
                                                             onChange={(e) => updateConcurso(idx, 'nombre', e.target.value)}
                                                             placeholder="Nombre del Concurso (Ej: Render, IA)"
-                                                            className="w-full bg-transparent border-b border-white/10 px-2 py-1 focus:outline-none focus:border-brand-purple font-bold"
+                                                            className="w-full bg-transparent border-b border-white/10 px-2 py-1 focus:outline-none focus:border-brand-purple font-bold text-white"
                                                         />
                                                         <input 
                                                             type="text" 
@@ -203,7 +203,7 @@ export default function InscripcionConfigPage() {
                         </Button>
                         <div className="mt-6 p-4 bg-brand-purple/10 border border-brand-purple/20 rounded-lg">
                             <h3 className="font-bold text-brand-purple mb-2">Nota Importante</h3>
-                            <p className="text-sm text-gray-300">
+                            <p className="text-sm text-gray-700">
                                 Al guardar estos cambios, se actualizarán las categorías disponibles en la pantalla de inicio y el monto validado por el OCR en las inscripciones de pago móvil.
                             </p>
                         </div>

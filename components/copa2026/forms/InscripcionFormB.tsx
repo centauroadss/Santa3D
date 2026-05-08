@@ -7,8 +7,8 @@ import { useDropzone } from 'react-dropzone';
 import { UploadCloud, ChevronLeft, CheckCircle2 } from 'lucide-react';
 
 const formSchema = z.object({
-  telefonoPago: z.string().regex(/^(412|422|414|424|416|426)\d{7}$/, 'Debe tener 10 dígitos y empezar con un prefijo válido (ej: 412, 414, etc.) sin el 0'),
-  cedulaPago: z.string().regex(/^[VEP]-\d{1,9}$/, 'Debe empezar por V-, E-, o P- seguido de máximo 9 números (Ej: V-12345678)'),
+  telefonoPago: z.string().regex(/^(?:\+58|0)?(412|422|414|424|416|426)\d{7}$/, 'Debe empezar con +58 o 0 seguido del prefijo válido (ej: +58412..., 0414...) y tener 10 dígitos'),
+  cedulaPago: z.string().regex(/^[VEPvep]-?\d{1,9}$/, 'Debe empezar por V, E, o P seguido de máximo 9 números (Ej: V-12345678)'),
   bancoOrigen: z.string().min(4, 'Selecciona un banco'),
   referencia: z.string().min(4, 'Ingresa los últimos dígitos de referencia'),
   comprobanteFile: z.any().refine((file) => file != null, 'Debes subir un comprobante')

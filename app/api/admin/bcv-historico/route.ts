@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
             return {
                 id: h.id,
                 fecha: h.fecha,
-                tasaUsdBs: tasa.toFixed(2),
+                tasaUsdBs: tasa.toFixed(4),
                 costoUnaCategoriaBs: (tasa * costoUnaCategoria).toFixed(2),
                 costoAmbasCategoriasBs: (tasa * costoAmbasCategorias).toFixed(2)
             };

@@ -9,11 +9,35 @@ export async function GET() {
             where: { clave: 'INSCRIPCION_CONFIG' }
         });
         
+        const paymentConfigs = await prisma.configConcurso.findMany({
+            where: {
+                clave: {
+                    in: ['pago_banco', 'pago_cedula', 'pago_telefono']
+                }
+            }
+        });
+        
+        const paymentData = paymentConfigs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
+        
+        let responseConfig = null;
         if (config) {
-            return NextResponse.json({ config: JSON.parse(config.valor) });
+            responseConfig = JSON.parse(config.valor);
         }
         
-        return NextResponse.json({ config: null });
+        const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
+            orderBy: { fecha: 'desc' }
+        });
+        const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 0;
+        
+        return NextResponse.json({ 
+            config: responseConfig,
+            payment: {
+                banco: paymentData['pago_banco'] || 'Banesco',
+                cedula: paymentData['pago_cedula'] || 'J123456789',
+                telefono: paymentData['pago_telefono'] || '04140000000'
+            },
+            tasaBcv: tasaBcv
+        });
     } catch (error) {
         return NextResponse.json({ error: 'Error fetching config' }, { status: 500 });
     }

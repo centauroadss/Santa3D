@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
     if (pathname === '/admin/login') return <>{children}</>;
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+        <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col md:flex-row">
             <aside className="w-full md:w-64 bg-white border-r border-gray-200 p-6 flex flex-col">
                 <div className="mb-8">
                     <h2 className="text-xl font-black text-brand-purple tracking-tighter">SANTA 3D <span className="text-gray-400 font-normal">| Admin</span></h2>

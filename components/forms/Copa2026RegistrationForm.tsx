@@ -12,14 +12,25 @@ interface Copa2026RegistrationFormProps {
 export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2026RegistrationFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [base64Image, setBase64Image] = useState<string | null>(null);
+    
+    const fotoInputRef = useRef<HTMLInputElement>(null);
+    const [previewFotoUrl, setPreviewFotoUrl] = useState<string | null>(null);
+    const [fotoPerfilFile, setFotoPerfilFile] = useState<File | null>(null);
+
+    const compInputRef = useRef<HTMLInputElement>(null);
+    const [previewCompUrl, setPreviewCompUrl] = useState<string | null>(null);
+    const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
     
     // Tasa y Monto
     const [tasaBcv, setTasaBcv] = useState<number>(0);
-    const [montoUsd, setMontoUsd] = useState<number>(5); // Default to 5
+    const [montoUsd, setMontoUsd] = useState<number>(5);
     const [aplicaPago, setAplicaPago] = useState<boolean>(true);
+
+    const [paymentInfo, setPaymentInfo] = useState({
+        banco: 'Banesco',
+        cedula: 'J123456789',
+        telefono: '04140000000'
+    });
 
     const [formData, setFormData] = useState({
         nombre: '',
@@ -30,24 +41,28 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
         instagram: '',
         telefonoPago: '',
         cedulaPago: '',
-        bancoPagoCodigo: '0102', // Default Banco de Venezuela
+        bancoPagoCodigo: '0102',
         montoDeclaradoBs: '',
+    });
+
+    const [checks, setChecks] = useState({
+        heLeido: false,
+        aceptoCesion: false
     });
 
     useEffect(() => {
         const fetchConfigAndRate = async () => {
             try {
-                // Fetch BCV Rate
-                const bcvRes = await axios.get('/api/admin/scraper-bcv');
-                if (bcvRes.data.tasaUsdBs) {
-                    setTasaBcv(parseFloat(bcvRes.data.tasaUsdBs));
-                }
-
-                // Fetch Config
                 const confRes = await axios.get('/api/admin/inscripcion-config');
                 if (confRes.data.config) {
                     setAplicaPago(confRes.data.config.aplica);
                     setMontoUsd(confRes.data.config.montoUsd || 5);
+                }
+                if (confRes.data.payment) {
+                    setPaymentInfo(confRes.data.payment);
+                }
+                if (confRes.data.tasaBcv) {
+                    setTasaBcv(confRes.data.tasaBcv);
                 }
             } catch (e) {
                 console.error("Failed to load initial data", e);
@@ -60,29 +75,42 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            setError('La foto no debe superar los 5MB');
+            return;
+        }
+        setFotoPerfilFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setPreviewFotoUrl(reader.result as string);
+        reader.readAsDataURL(file);
+    };
 
+    const handleCompChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
         if (file.size > 5 * 1024 * 1024) {
             setError('El comprobante no debe superar los 5MB');
             return;
         }
-
+        setComprobanteFile(file);
         const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64 = reader.result as string;
-            setPreviewUrl(base64);
-            setBase64Image(base64);
-        };
+        reader.onloadend = () => setPreviewCompUrl(reader.result as string);
         reader.readAsDataURL(file);
     };
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (aplicaPago && !base64Image) {
+        if (aplicaPago && !comprobanteFile) {
             setError('Debes adjuntar el comprobante de pago móvil.');
+            return;
+        }
+
+        if (!fotoPerfilFile) {
+            setError('Debes adjuntar tu foto de perfil.');
             return;
         }
 
@@ -90,15 +118,25 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
             setIsSubmitting(true);
             setError(null);
 
-            const payload = {
-                ...formData,
-                categoria,
-                montoDeclaradoBs: formData.montoDeclaradoBs || (tasaBcv * montoUsd).toFixed(2),
-                comprobanteBase64: base64Image || 'data:image/jpeg;base64,', // empty if not applying
-                tasaBcv: tasaBcv || 1, // Fallback safe
-            };
+            const formPayload = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+                formPayload.append(key, value);
+            });
+            formPayload.append('categoria', categoria);
+            formPayload.append('montoDeclaradoBs', formData.montoDeclaradoBs || (tasaBcv * montoUsd).toFixed(2));
+            formPayload.append('tasaBcv', (tasaBcv || 1).toString());
+            
+            formPayload.append('fotoPerfilFile', fotoPerfilFile);
+            if (aplicaPago && comprobanteFile) {
+                formPayload.append('comprobanteFile', comprobanteFile);
+                formPayload.append('bancoOrigen', formData.bancoPagoCodigo);
+                formPayload.append('referencia', 'NA'); // Adjust if reference is required from user
+            }
 
-            const response = await axios.post('/api/copa2026/inscripcion', payload);
+            const response = await axios.post('/api/copa2026/inscripcion', formPayload, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
             if (response.data.success) {
                 onSuccess();
             }
@@ -106,7 +144,7 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
             console.error('Error en registro:', err);
             setError(
                 err.response?.data?.error ||
-                'Error al registrarse. Por favor, revisa tus datos o el comprobante.'
+                'Error al registrarse. Por favor, revisa tus datos o los archivos adjuntos.'
             );
         } finally {
             setIsSubmitting(false);
@@ -114,6 +152,21 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
     };
 
     const montoCalculado = (tasaBcv * montoUsd).toFixed(2);
+
+    const regexCedula = /^[VEP]-?\d{1,9}$/i;
+    const regexPhone = /^(?:\+58|0)?(412|422|414|424|416|426)\d{7}$/;
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const regexInstagram = /^@[\w.-]+$/;
+
+    const isFormValid = 
+        checks.heLeido && 
+        checks.aceptoCesion && 
+        fotoPerfilFile && 
+        (!aplicaPago || comprobanteFile) &&
+        regexCedula.test(formData.cedulaIdentidad.trim()) &&
+        regexPhone.test(formData.telefono.trim()) &&
+        regexEmail.test(formData.email.trim()) &&
+        regexInstagram.test(formData.instagram.trim());
 
     return (
         <form onSubmit={onSubmit} className="space-y-8">
@@ -130,8 +183,44 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
                     <Input label="Apellido" name="apellido" value={formData.apellido} onChange={handleInputChange} required placeholder="Pérez" />
                     <Input label="Cédula de Identidad" name="cedulaIdentidad" value={formData.cedulaIdentidad} onChange={handleInputChange} required placeholder="V-12345678" />
                     <Input label="Email" type="email" name="email" value={formData.email} onChange={handleInputChange} required placeholder="juan@example.com" />
-                    <Input label="Teléfono (WhatsApp)" type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange} required placeholder="+584121234567" />
+                    <Input label="Teléfono (WhatsApp)" type="tel" name="telefono" value={formData.telefono} onChange={handleInputChange} required placeholder="+584141234567 o 04141234567" />
                     <Input label="Usuario de Instagram" name="instagram" value={formData.instagram} onChange={handleInputChange} required placeholder="@juanp3d" helperText="Asegúrate de que empiece con @" />
+                    
+                    <div className="col-span-1 md:col-span-2 mt-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Foto de Perfil (Rostro claro)</label>
+                        <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${previewFotoUrl ? 'border-brand-purple bg-brand-purple/5' : 'border-gray-600 hover:border-gray-400 bg-[#1a1a1a]'}`}>
+                            {previewFotoUrl ? (
+                                <div className="space-y-4">
+                                    <img src={previewFotoUrl} alt="Foto Perfil" className="max-h-48 mx-auto rounded-full shadow-lg border border-white/10 object-cover aspect-square" />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setPreviewFotoUrl(null); setFotoPerfilFile(null); }}
+                                        className="text-sm text-red-400 hover:text-red-300 font-bold"
+                                    >
+                                        Cambiar Foto
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="cursor-pointer" onClick={() => fotoInputRef.current?.click()}>
+                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-gray-300 font-medium">Haz clic para subir tu foto de perfil</p>
+                                    <p className="text-gray-500 text-sm mt-1">Formatos: JPG, PNG (Max 5MB)</p>
+                                    <p className="text-brand-purple text-xs mt-2 font-bold">⚠️ Debe ser un rostro de persona (no paisajes ni objetos)</p>
+                                </div>
+                            )}
+                            <input 
+                                type="file" 
+                                ref={fotoInputRef} 
+                                onChange={handleFotoChange} 
+                                accept="image/jpeg, image/png, image/webp" 
+                                className="hidden" 
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -148,9 +237,9 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
                     
                     <div className="bg-[#111] rounded-xl p-4 mb-6 border border-white/5 font-mono text-sm text-center text-gray-300">
                         <p>Realiza el pago a los siguientes datos:</p>
-                        <p className="font-bold text-white text-lg mt-2">Bancamiga (0172)</p>
-                        <p>Teléfono: 0414-1234567</p>
-                        <p>RIF: J-40123456-7</p>
+                        <p className="font-bold text-white text-lg mt-2">{paymentInfo.banco}</p>
+                        <p>Teléfono: {paymentInfo.telefono}</p>
+                        <p>CI/RIF: {paymentInfo.cedula}</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
@@ -182,20 +271,20 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
                         
                         <div className="col-span-1 md:col-span-2 mt-4">
                             <label className="block text-sm font-medium text-gray-300 mb-2">Comprobante de Pago (Capture)</label>
-                            <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${previewUrl ? 'border-brand-purple bg-brand-purple/5' : 'border-gray-600 hover:border-gray-400 bg-[#1a1a1a]'}`}>
-                                {previewUrl ? (
+                            <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${previewCompUrl ? 'border-brand-purple bg-brand-purple/5' : 'border-gray-600 hover:border-gray-400 bg-[#1a1a1a]'}`}>
+                                {previewCompUrl ? (
                                     <div className="space-y-4">
-                                        <img src={previewUrl} alt="Comprobante" className="max-h-64 mx-auto rounded-lg shadow-lg border border-white/10" />
+                                        <img src={previewCompUrl} alt="Comprobante" className="max-h-64 mx-auto rounded-lg shadow-lg border border-white/10" />
                                         <button 
                                             type="button" 
-                                            onClick={() => { setPreviewUrl(null); setBase64Image(null); }}
+                                            onClick={() => { setPreviewCompUrl(null); setComprobanteFile(null); }}
                                             className="text-sm text-red-400 hover:text-red-300 font-bold"
                                         >
                                             Cambiar Comprobante
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                    <div className="cursor-pointer" onClick={() => compInputRef.current?.click()}>
                                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -208,8 +297,8 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
                                 )}
                                 <input 
                                     type="file" 
-                                    ref={fileInputRef} 
-                                    onChange={handleFileChange} 
+                                    ref={compInputRef} 
+                                    onChange={handleCompChange} 
                                     accept="image/jpeg, image/png, image/webp" 
                                     className="hidden" 
                                 />
@@ -219,11 +308,41 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
                 </div>
             )}
 
-            <Button type="submit" className="w-full" size="lg" isLoading={isSubmitting} disabled={tasaBcv === 0}>
+            <div className="space-y-4 bg-white/5 border border-white/10 rounded-2xl p-6">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="mt-1">
+                        <input 
+                            type="checkbox" 
+                            checked={checks.heLeido}
+                            onChange={(e) => setChecks({...checks, heLeido: e.target.checked})}
+                            className="w-5 h-5 rounded border-gray-600 text-brand-purple focus:ring-brand-purple bg-[#1a1a1a]"
+                        />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-300 group-hover:text-white transition-colors">He leído y acepto las bases del concurso Copa Centauro 2026.</p>
+                    </div>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="mt-1">
+                        <input 
+                            type="checkbox" 
+                            checked={checks.aceptoCesion}
+                            onChange={(e) => setChecks({...checks, aceptoCesion: e.target.checked})}
+                            className="w-5 h-5 rounded border-gray-600 text-brand-purple focus:ring-brand-purple bg-[#1a1a1a]"
+                        />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-300 group-hover:text-white transition-colors">Acepto la cesión de derechos sobre mi obra y autorizo su uso y reproducción por parte de Centauro.</p>
+                    </div>
+                </label>
+            </div>
+
+            <Button type="submit" className="w-full" size="lg" isLoading={isSubmitting} disabled={tasaBcv === 0 || !isFormValid}>
                 {isSubmitting ? 'Verificando Comprobante...' : (tasaBcv === 0 ? 'Cargando datos...' : 'Finalizar Inscripción')}
             </Button>
             
-            <p className="text-center text-xs text-gray-500">
+            <p className="text-center text-xs text-gray-500 mt-4">
                 Al finalizar, nuestro sistema validará tu pago y te enviaremos por email el acceso exclusivo para subir tu obra.
             </p>
         </form>

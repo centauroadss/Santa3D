@@ -10,9 +10,9 @@ const formSchema = z.object({
   nombre: z.string().min(2, 'El nombre es muy corto'),
   apellido: z.string().min(2, 'El apellido es muy corto'),
   cedulaIdentidad: z.string().regex(/^[VEPvep]-?\d{1,9}$/, 'Debe empezar por V, E, o P seguido de máximo 9 números (Ej: V-12345678 o V12345678)'),
-  email: z.string().regex(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'El email debe tener un @ y un dominio válido (ej. usuario@dominio.com)'),
-  telefono: z.string().regex(/^(412|422|414|424|416|426)\d{7}$/, 'Debe tener 10 dígitos y empezar con un prefijo válido (ej: 412, 414, etc.) sin el 0'),
-  instagram: z.string().regex(/^@[a-zA-Z0-9_.]+$/, 'Debe empezar con @').min(2, 'Requerido'),
+  email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'El email debe tener un @ y un sufijo válido (ej. usuario@dominio.com)'),
+  telefono: z.string().regex(/^(?:\+58|0)?(412|422|414|424|416|426)\d{7}$/, 'Debe empezar con +58 o 0 seguido del prefijo válido (ej: 412, 414) y tener 10 dígitos'),
+  instagram: z.string().regex(/^@[\w.-]+$/, 'Debe empezar con @').min(2, 'Requerido'),
   categoria: z.enum(['RENDER', 'IA', 'AMBAS'], {
     required_error: 'Debes seleccionar una categoría',
   }),
