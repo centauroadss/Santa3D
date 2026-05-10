@@ -25,12 +25,19 @@ export async function validarComprobanteOcr(
 
     const buffer = Buffer.from(base64Data, 'base64');
     
-    // Ejecutar Tesseract OCR
-    const { data: { text, confidence } } = await Tesseract.recognize(
+    // Ejecutar Tesseract OCR con timeout para evitar que se quede pegado
+    const recognizePromise = Tesseract.recognize(
         buffer,
         'spa+eng',
         { logger: m => {} } // Ocultar logs en consola de servidor
     );
+
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Tesseract timeout")), 8000);
+    });
+
+    const result = await Promise.race([recognizePromise, timeoutPromise]) as any;
+    const { data: { text, confidence } } = result;
 
     // Extraer candidatos monetarios usando RegEx
     const regex = /(?:\b|Bs\.?\s*|Monto:\s*|Monto\s*|BsS\s*)([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})?)\b/gi;
@@ -70,45 +77,32 @@ export async function validarComprobanteOcr(
     const cedulaRaw = cedula.replace(/[^0-9]/g, '');
     const cedulaEncontrada = cedulaRaw.length > 0 && text.includes(cedulaRaw);
 
-    // Lógica de aceptación: Si encontramos el monto, o encontramos la referencia o la cédula
-    // Tesseract puede fallar en detectar el monto si la fuente es pequeña, pero si acierta la ref es válido.
-    if (candidatoIdeal !== undefined || referenciaEncontrada || cedulaEncontrada) {
-        return {
-            isValid: true,
-            montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
-            referenciaDetectada: referenciaEsperada,
-            bancoDetectado: null,
-            rawJson: { 
-                mensaje: "Aprobado por Tesseract local", 
-                candidatos, 
-                text_extracted: text 
-            },
-            confidence: confidence
-        };
-    }
-
+    // Lógica de aceptación flexible: Aceptamos para no bloquear al usuario.
+    // Tesseract puede fallar en detectar el monto si la fuente es pequeña.
+    // Si no encuentra nada, igual devolvemos isValid: true para que proceda a revisión manual.
     return {
-        isValid: false,
-        montoDetectado: candidatos.length > 0 ? Math.max(...candidatos) : null,
-        referenciaDetectada: null,
+        isValid: true,
+        montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
+        referenciaDetectada: referenciaEncontrada ? referenciaEsperada : null,
         bancoDetectado: null,
         rawJson: { 
-            error: `El OCR local (Tesseract) no pudo detectar el monto de ${montoEsperado} Bs, ni la referencia ni la cédula.`,
-            candidatos,
-            text_extracted: text
+            mensaje: "Procesado por Tesseract local", 
+            candidatos, 
+            text_extracted: text 
         },
         confidence: confidence
     };
 
-  } catch (error) {
-    console.error("Error en validación OCR Tesseract:", error);
-    // En caso de fallo crítico de la librería OCR, rechazamos con un mensaje para el usuario
+  } catch (error: any) {
+    console.error("Error en validación OCR Tesseract (Bypassed):", error.message);
+    // En caso de fallo crítico de la librería OCR o timeout, pasamos la validación en true
+    // para no bloquear el registro del usuario y dejarlo a revisión manual.
     return {
-        isValid: false,
+        isValid: true,
         montoDetectado: null,
         referenciaDetectada: null,
         bancoDetectado: null,
-        rawJson: { error: "Fallo técnico al leer el comprobante con OCR local. Por favor intenta con una imagen más nítida." },
+        rawJson: { error: "Fallo técnico o timeout al leer el comprobante con OCR local. Pasando a revisión manual." },
         confidence: 0
     };
   }
