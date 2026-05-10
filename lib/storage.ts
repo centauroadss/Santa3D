@@ -26,8 +26,9 @@ export const StorageService = {
   },
   getUrl: async (key: string) => {
     if (!key) return null;
-    if (key.startsWith('http') || key.startsWith('/uploads/')) return key;
-    if (STORAGE_PROVIDER === 'local') return `/uploads/${key}`;
+    if (key.startsWith('http')) return key;
+    if (key.startsWith('/uploads/')) return `/api${key}`; // Redirects /uploads/ to /api/uploads/
+    if (STORAGE_PROVIDER === 'local') return `/api/uploads/${key}`;
 
     // BACKUP LOGIC: Use raw endpoint. This creates double-bucket URLs if endpoint has bucket.
     // Preserving this behavior as it matches "Working State" history.
@@ -48,7 +49,8 @@ export const StorageService = {
     return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
   },
   getSignedVideoUrl: async (key: string) => {
-    if (STORAGE_PROVIDER === 'local') return `/uploads/${key}`;
+    if (key.startsWith('/uploads/')) return `/api${key}`;
+    if (STORAGE_PROVIDER === 'local') return `/api/uploads/${key}`;
     const command = new GetObjectCommand({ Bucket: S3_BUCKET, Key: key });
     return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
   },
