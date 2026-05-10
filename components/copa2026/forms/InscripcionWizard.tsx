@@ -87,9 +87,7 @@ export default function InscripcionWizard({
       formData.append('comprobanteFile', dataB.comprobanteFile);
 
       // Llamada real a la API (Fase Backend)
-      await axios.post('/api/copa2026/inscripcion', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await axios.post('/api/copa2026/inscripcion', formData);
       
       // Guardar email para confirmación
       if (formDataA.email) {

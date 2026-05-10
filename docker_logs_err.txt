@@ -1,19 +1,16 @@
-Error en endpoint inscripcion: TypeError: Failed to parse body as FormData.
-    at node:internal/deps/undici/undici:5619:27
-    at successSteps (node:internal/deps/undici/undici:5663:27)
-    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
+⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
+Error fetching from Instagram: Error: CONFIG_MISSING: Instagram Credentials missing
+    at Object.getTaggedMedia (/app/.next/server/app/api/public/ranking/route.js:1:5161)
+    at p (/app/.next/server/app/api/admin/instagram/media/route.js:1:1494)
     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
-    at async consumeBody (node:internal/deps/undici/undici:5672:7)
-    at async g (/app/.next/server/app/api/copa2026/inscripcion/route.js:1:3406)
     at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
     at async e_.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
     at async e_.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
     at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
-⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
-⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
-⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
-⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
-⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
+    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+    at async NextNodeServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
 Error: Cannot find module '/app/.next/server/app/api/worker-script/node/index.js'
     at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
     at Function._load (node:internal/modules/cjs/loader:1051:27)
@@ -24,8 +21,3 @@ Error: Cannot find module '/app/.next/server/app/api/worker-script/node/index.js
   code: 'MODULE_NOT_FOUND',
   requireStack: []
 }
-npm error path /app
-npm error command failed
-npm error signal SIGTERM
-npm error command sh -c next start -H 0.0.0.0
-npm error A complete log of this run can be found in: /root/.npm/_logs/2026-05-10T15_30_29_971Z-debug-0.log

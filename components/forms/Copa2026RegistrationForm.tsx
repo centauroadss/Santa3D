@@ -133,9 +133,7 @@ export default function Copa2026RegistrationForm({ categoria, onSuccess }: Copa2
                 formPayload.append('referencia', 'NA'); // Adjust if reference is required from user
             }
 
-            const response = await axios.post('/api/copa2026/inscripcion', formPayload, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const response = await axios.post('/api/copa2026/inscripcion', formPayload);
 
             if (response.data.success) {
                 onSuccess();
