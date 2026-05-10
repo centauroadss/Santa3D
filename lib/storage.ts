@@ -9,9 +9,15 @@ const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 's3';
 const S3_BUCKET = process.env.AWS_S3_BUCKET || 'santa3d-assets';
 const REGION = process.env.AWS_REGION || 'us-east-1';
 
+const rawEndpoint = process.env.AWS_ENDPOINT || '';
+// Clean the endpoint to prevent double-bucket prefixing (santa3d.santa3d.sfo3...)
+const cleanEndpoint = rawEndpoint.includes(`//${S3_BUCKET}.`) 
+  ? rawEndpoint.replace(`//${S3_BUCKET}.`, '//') 
+  : rawEndpoint;
+
 const s3Client = new S3Client({
   region: REGION,
-  endpoint: process.env.AWS_ENDPOINT, // TRUST THE BACKUP: Use raw endpoint even if 'dirty'
+  endpoint: cleanEndpoint,
   forcePathStyle: false, // LOGIC: Use Virtual Host style to match DO SFO3 requirements
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
