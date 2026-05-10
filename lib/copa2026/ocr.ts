@@ -77,18 +77,33 @@ export async function validarComprobanteOcr(
     const cedulaRaw = cedula.replace(/[^0-9]/g, '');
     const cedulaEncontrada = cedulaRaw.length > 0 && text.includes(cedulaRaw);
 
-    // Lógica de aceptación flexible: Aceptamos para no bloquear al usuario.
-    // Tesseract puede fallar en detectar el monto si la fuente es pequeña.
-    // Si no encuentra nada, igual devolvemos isValid: true para que proceda a revisión manual.
+    // Lógica de aceptación ESTRICTA (Solicitado por el auditor):
+    // El OCR debe encontrar el monto ideal, O la referencia/cédula.
+    // Si no encuentra nada de eso, rechazamos la validación para evitar fraude.
+    if (candidatoIdeal !== undefined || referenciaEncontrada || cedulaEncontrada) {
+        return {
+            isValid: true,
+            montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
+            referenciaDetectada: referenciaEncontrada ? referenciaEsperada : null,
+            bancoDetectado: null,
+            rawJson: { 
+                mensaje: "Aprobado por Tesseract local", 
+                candidatos, 
+                text_extracted: text 
+            },
+            confidence: confidence
+        };
+    }
+
     return {
-        isValid: true,
-        montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
-        referenciaDetectada: referenciaEncontrada ? referenciaEsperada : null,
+        isValid: false,
+        montoDetectado: candidatos.length > 0 ? Math.max(...candidatos) : null,
+        referenciaDetectada: null,
         bancoDetectado: null,
         rawJson: { 
-            mensaje: "Procesado por Tesseract local", 
-            candidatos, 
-            text_extracted: text 
+            error: `El OCR no pudo detectar el monto exacto de ${montoEsperado} Bs, ni la referencia. Sube una imagen más clara.`,
+            candidatos,
+            text_extracted: text
         },
         confidence: confidence
     };

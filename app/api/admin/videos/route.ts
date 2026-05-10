@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       let fotoPerfilUrl = null;
       if (insc.fotoPerfilPath) {
           try {
-              fotoPerfilUrl = await StorageService.getSignedVideoUrl(insc.fotoPerfilPath);
+              fotoPerfilUrl = await StorageService.getUrl(insc.fotoPerfilPath);
           } catch (err) {}
       }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       let comprobanteUrl = null;
       if (insc.pago?.comprobantePath) {
           try {
-              comprobanteUrl = await StorageService.getSignedVideoUrl(insc.pago.comprobantePath);
+              comprobanteUrl = await StorageService.getUrl(insc.pago.comprobantePath);
           } catch (err) {}
       }
 
@@ -69,6 +69,8 @@ export async function GET(request: NextRequest) {
       return {
         id: insc.id.toString(),
         participantName: `${insc.nombre} ${insc.apellido}`,
+        cedulaIdentidad: insc.cedulaIdentidad,
+        instagram: insc.instagram || '-',
         email: insc.email,
         telefono: insc.telefono,
         categoria: insc.categoria,

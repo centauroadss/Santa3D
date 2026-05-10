@@ -24,6 +24,8 @@ interface VideoData {
 interface InscripcionData {
     id: string;
     participantName: string;
+    cedulaIdentidad: string;
+    instagram: string;
     email: string;
     telefono: string;
     categoria: string;
@@ -268,6 +270,8 @@ export default function AdminInscripcionesPage() {
                                                 {insc.categoria}
                                             </span>
                                         </div>
+                                        <div className="text-[10px] text-gray-500 font-mono mt-1">C.I: {insc.cedulaIdentidad}</div>
+                                        <div className="text-[10px] text-brand-purple font-mono font-bold">{insc.instagram}</div>
                                         <div className="text-[10px] text-gray-400 font-mono mt-1">{insc.email}</div>
                                         <div className="text-[10px] text-gray-400 font-mono">{insc.telefono}</div>
                                         <div className="mt-1">

@@ -46,6 +46,69 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
   const cesionDerechos = watch('cesionDerechos');
   const [fotoPerfilFile, setFotoPerfilFile] = useState<File | null>(initialData?.fotoPerfilFile || null);
 
+  const [isValidatingFace, setIsValidatingFace] = useState(false);
+  const [faceError, setFaceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Cargar face-api.js dinámicamente si no existe
+    if (typeof window !== 'undefined' && !(window as any).faceapi) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  const validateFaceLocally = async (file: File) => {
+    setIsValidatingFace(true);
+    setFaceError(null);
+    try {
+      const faceapi = (window as any).faceapi;
+      if (!faceapi) {
+        // Fallback si la librería no carga rápido, lo dejamos pasar
+        setFotoPerfilFile(file);
+        setIsValidatingFace(false);
+        return;
+      }
+
+      // Cargar modelos mínimos si no están cargados
+      if (!faceapi.nets.tinyFaceDetector.isLoaded) {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
+      }
+
+      // Leer imagen para validarla
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
+      URL.revokeObjectURL(objectUrl);
+
+      if (detections.length === 0) {
+        setFaceError('No se ha detectado ningún rostro humano en la imagen.');
+        setFotoPerfilFile(null);
+      } else if (detections.length > 1) {
+        setFaceError('Se detectó más de una persona. La foto debe ser individual.');
+        setFotoPerfilFile(null);
+      } else {
+        // Todo OK
+        setFotoPerfilFile(file);
+        setFaceError(null);
+      }
+    } catch (e) {
+      console.error("Error validando rostro:", e);
+      // En caso de error técnico de la librería, dejamos pasar para no bloquear
+      setFotoPerfilFile(file);
+    } finally {
+      setIsValidatingFace(false);
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'image/jpeg': ['.jpeg', '.jpg'],
@@ -55,7 +118,7 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
     maxSize: 5 * 1024 * 1024,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
-        setFotoPerfilFile(acceptedFiles[0]);
+        validateFaceLocally(acceptedFiles[0]);
       }
     }
   });
@@ -171,15 +234,22 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
           {...getRootProps()} 
           className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
             isDragActive ? 'border-brand-purple bg-brand-purple/10' : 
+            faceError ? 'border-red-500 bg-red-500/10' :
+            isValidatingFace ? 'border-yellow-500 bg-yellow-500/10' :
             fotoPerfilFile ? 'border-green-500 bg-green-500/5' : 'border-red-500/50 hover:border-brand-purple bg-[#111]'
           }`}
         >
           <input {...getInputProps()} />
-          {fotoPerfilFile ? (
+          {isValidatingFace ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-4 border-brand-purple border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-brand-purple font-bold">Validando rostro mediante IA...</p>
+            </div>
+          ) : fotoPerfilFile ? (
             <div className="flex flex-col items-center gap-2">
               <CheckCircle2 className="text-green-500" size={32} />
               <p className="text-white font-bold">{fotoPerfilFile.name}</p>
-              <p className="text-green-500 text-sm">Foto adjunta correctamente</p>
+              <p className="text-green-500 text-sm">Foto validada adjunta correctamente</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
@@ -189,6 +259,7 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
             </div>
           )}
         </div>
+        {faceError && <p className="text-red-500 text-xs mt-2 font-bold">{faceError}</p>}
       </div>
 
       <div className="space-y-4 pt-6 border-t border-white/10">

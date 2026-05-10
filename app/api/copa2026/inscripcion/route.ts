@@ -115,21 +115,14 @@ export async function POST(req: Request) {
     const fotoExt = fotoPerfilFile.name.split('.').pop();
     const fileNameFoto = `perfiles_2026/${Date.now()}-${uuidv4()}.${fotoExt}`;
     
-    if (process.env.AWS_ACCESS_KEY_ID) {
-      // Subir comprobante
-      await s3Client.send(new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: fileNameComprobante,
-        Body: bufferComprobante,
-        ContentType: comprobanteFile.type,
-      }));
-      // Subir foto
-      await s3Client.send(new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: fileNameFoto,
-        Body: bufferFoto,
-        ContentType: fotoPerfilFile.type,
-      }));
+    let savedComprobantePath = fileNameComprobante;
+    let savedFotoPath = fileNameFoto;
+    
+    try {
+      savedComprobantePath = await StorageService.saveFile(bufferComprobante, fileNameComprobante, comprobanteFile.type);
+      savedFotoPath = await StorageService.saveFile(bufferFoto, fileNameFoto, fotoPerfilFile.type);
+    } catch (e) {
+      console.error("Error al guardar imágenes en StorageService, usando paths por defecto:", e);
     }
 
     // 3. Crear Inscripción en BD
@@ -147,7 +140,7 @@ export async function POST(req: Request) {
         categoria,
         tokenVideo,
         tokenExpiry,
-        fotoPerfilPath: fileNameFoto,
+        fotoPerfilPath: savedFotoPath,
         estatusInscripcion: 'APROBADO', // Se aprueba automático por el OCR
         pago: {
           create: {
@@ -157,7 +150,7 @@ export async function POST(req: Request) {
             montoCapturadoBs: ocrResult.montoDetectado || montoEsperadoBs,
             montoEsperadoBs,
             tasaBcvUsada: tasaBcv,
-            comprobantePath: fileNameComprobante,
+            comprobantePath: savedComprobantePath,
             fileHash,
             ocrResultadoRaw: ocrResult.rawJson,
             ocrConfianza: ocrResult.confidence,
