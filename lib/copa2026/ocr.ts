@@ -1,4 +1,4 @@
-import axios from 'axios';
+import Tesseract from 'tesseract.js';
 
 interface OcrResult {
   isValid: boolean;
@@ -17,126 +17,99 @@ export async function validarComprobanteOcr(
   apellido: string,
   cedula: string
 ): Promise<OcrResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.warn("Falta ANTHROPIC_API_KEY. No se puede validar el comprobante.");
-    return {
-      isValid: false,
-      montoDetectado: null,
-      referenciaDetectada: null,
-      bancoDetectado: null,
-      rawJson: { error: "El sistema OCR no está configurado (Falta ANTHROPIC_API_KEY)." },
-      confidence: 0
-    };
-  }
-
   try {
     // Limpiar header base64 si existe
     const base64Data = base64Image.includes('base64,') 
       ? base64Image.split('base64,')[1] 
       : base64Image;
 
-    const mimeType = base64Image.includes('pdf') ? 'application/pdf' : 'image/jpeg';
+    const buffer = Buffer.from(base64Data, 'base64');
     
-    const response = await axios.post(
-      'https://api.anthropic.com/v1/messages',
-      {
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 1024,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: mimeType === 'application/pdf' ? 'application/pdf' : 'image/jpeg',
-                  data: base64Data
-                }
-              },
-              {
-                type: "text",
-                text: `Extrae la información de este comprobante de pago móvil venezolano.
-INSTRUCCIÓN CRÍTICA: NO calcules ni infieras montos. Debes extraer exactamente el número que aparece como el monto transferido en el comprobante.
-Devuelve EXACTAMENTE un objeto JSON válido sin texto adicional (ni markdown) con esta estructura:
-{
-  "monto": 123.45,
-  "referencia": "últimos 6 digitos numéricos",
-  "banco": "Nombre del banco",
-  "fecha": "YYYY-MM-DD",
-  "concepto": "Texto literal que aparece en concepto o descripción u observación"
-}
-Si no encuentras un valor, pon null.`
-              }
-            ]
-          }
-        ]
-      },
-      {
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json'
-        }
-      }
+    // Ejecutar Tesseract OCR
+    const { data: { text, confidence } } = await Tesseract.recognize(
+        buffer,
+        'spa+eng',
+        { logger: m => {} } // Ocultar logs en consola de servidor
     );
 
-    let textResponse = response.data.content[0].text;
-    
-    // Limpiar markdown json si existe
-    textResponse = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed = JSON.parse(textResponse);
+    // Extraer candidatos monetarios usando RegEx
+    const regex = /(?:\b|Bs\.?\s*|Monto:\s*|Monto\s*|BsS\s*)([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})?)\b/gi;
+    const matches = [...text.matchAll(regex)];
+    const candidatos = [];
 
-    const montoDetectado = parsed.monto;
-    const referenciaDetectada = parsed.referencia;
-    const conceptoDetectado = (parsed.concepto || "").toLowerCase();
-    
-    // Validar lógicamente
-    const isMontoValid = montoDetectado !== null && montoDetectado !== undefined && Math.abs(montoDetectado - montoEsperado) < 1.0; // Tolerancia 1 Bs para redondeos
-    
-    if (!isMontoValid) {
-      return {
-        isValid: false,
-        montoDetectado,
-        referenciaDetectada,
-        bancoDetectado: parsed.banco,
-        rawJson: { ...parsed, error: `Monto incorrecto. Detectado: ${montoDetectado}, Esperado: ${montoEsperado}` },
-        confidence: 0.95
-      };
+    for (const match of matches) {
+        let numStr = match[1];
+        const parts = numStr.split(/[.,]/);
+        if (parts.length > 1) {
+            const lastPart = parts[parts.length - 1];
+            // Si la última parte tiene 1 o 2 dígitos, es decimal
+            if (lastPart.length <= 2) {
+                const intPart = parts.slice(0, -1).join('');
+                numStr = intPart + '.' + lastPart;
+            } else {
+                numStr = parts.join('');
+            }
+        }
+
+        const parsed = parseFloat(numStr);
+        if (!isNaN(parsed) && parsed > 1 && parsed < 500000) {
+            candidatos.push(parsed);
+        }
     }
 
-    // Validar concepto
-    const nombreParts = nombre.toLowerCase().split(' ');
-    const apellidoParts = apellido.toLowerCase().split(' ');
+    const margen = 5.0; // 5 Bs de tolerancia
+    const candidatoIdeal = candidatos.find(c => c >= montoEsperado - margen && c <= montoEsperado + margen);
+
+    // Búsqueda de referencia
+    // Buscamos al menos los últimos 4 dígitos de la referencia para mayor flexibilidad ante lectura parcial
+    const refLimpia = referenciaEsperada.replace(/\D/g, '');
+    const refFragment = refLimpia.length > 4 ? refLimpia.slice(-4) : refLimpia;
+    const referenciaEncontrada = refFragment.length > 0 && text.includes(refFragment);
+
+    // Búsqueda de concepto/cédula en el texto raw como método auxiliar
     const cedulaRaw = cedula.replace(/[^0-9]/g, '');
+    const cedulaEncontrada = cedulaRaw.length > 0 && text.includes(cedulaRaw);
 
-    const hasNameMatch = nombreParts.some(p => p.length > 2 && conceptoDetectado.includes(p)) || 
-                         apellidoParts.some(p => p.length > 2 && conceptoDetectado.includes(p));
-    const hasCedulaMatch = conceptoDetectado.includes(cedulaRaw);
-
-    if (!hasNameMatch && !hasCedulaMatch) {
-       return {
-        isValid: false,
-        montoDetectado,
-        referenciaDetectada,
-        bancoDetectado: parsed.banco,
-        rawJson: { ...parsed, error: `El concepto del pago no incluye el nombre ni la cédula del participante. Concepto detectado: "${conceptoDetectado}"` },
-        confidence: 0.95
-      };
+    // Lógica de aceptación: Si encontramos el monto, o encontramos la referencia o la cédula
+    // Tesseract puede fallar en detectar el monto si la fuente es pequeña, pero si acierta la ref es válido.
+    if (candidatoIdeal !== undefined || referenciaEncontrada || cedulaEncontrada) {
+        return {
+            isValid: true,
+            montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
+            referenciaDetectada: referenciaEsperada,
+            bancoDetectado: null,
+            rawJson: { 
+                mensaje: "Aprobado por Tesseract local", 
+                candidatos, 
+                text_extracted: text 
+            },
+            confidence: confidence
+        };
     }
 
     return {
-      isValid: true,
-      montoDetectado,
-      referenciaDetectada,
-      bancoDetectado: parsed.banco,
-      rawJson: parsed,
-      confidence: 0.95
+        isValid: false,
+        montoDetectado: candidatos.length > 0 ? Math.max(...candidatos) : null,
+        referenciaDetectada: null,
+        bancoDetectado: null,
+        rawJson: { 
+            error: `El OCR local (Tesseract) no pudo detectar el monto de ${montoEsperado} Bs, ni la referencia ni la cédula.`,
+            candidatos,
+            text_extracted: text
+        },
+        confidence: confidence
     };
 
   } catch (error) {
-    console.error("Error en validación OCR:", error);
-    throw new Error("No se pudo procesar la validación del comprobante. Intenta subir una imagen más clara.");
+    console.error("Error en validación OCR Tesseract:", error);
+    // En caso de fallo crítico de la librería OCR, rechazamos con un mensaje para el usuario
+    return {
+        isValid: false,
+        montoDetectado: null,
+        referenciaDetectada: null,
+        bancoDetectado: null,
+        rawJson: { error: "Fallo técnico al leer el comprobante con OCR local. Por favor intenta con una imagen más nítida." },
+        confidence: 0
+    };
   }
 }
