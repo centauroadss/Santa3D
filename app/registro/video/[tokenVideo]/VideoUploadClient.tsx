@@ -1,8 +1,9 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { useDropzone } from 'react-dropzone';
 
 type Categoria = 'RENDER' | 'IA' | 'AMBAS';
 
@@ -13,12 +14,13 @@ type VideoMeta = {
     resolution: string | null;
     sizeBytes: number | null;
     error: string | null;
+    uploadProgress: number;
 };
 
 export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVideo: string, categoria: Categoria }) {
     const [videos, setVideos] = useState<Record<'RENDER' | 'IA', VideoMeta>>({
-        RENDER: { file: null, previewUrl: null, duration: null, resolution: null, sizeBytes: null, error: null },
-        IA: { file: null, previewUrl: null, duration: null, resolution: null, sizeBytes: null, error: null }
+        RENDER: { file: null, previewUrl: null, duration: null, resolution: null, sizeBytes: null, error: null, uploadProgress: 0 },
+        IA: { file: null, previewUrl: null, duration: null, resolution: null, sizeBytes: null, error: null, uploadProgress: 0 }
     });
     const [isUploading, setIsUploading] = useState(false);
     const [globalError, setGlobalError] = useState<string | null>(null);
@@ -28,8 +30,8 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
         if (!selectedFile) return;
 
         let error = null;
-        if (selectedFile.size > 50 * 1024 * 1024) {
-            error = 'El video supera el límite de 50MB.';
+        if (selectedFile.size > 500 * 1024 * 1024) {
+            error = 'El video supera el límite de 500MB.';
         } else if (selectedFile.type !== 'video/mp4') {
             error = 'Solo se permiten archivos en formato MP4.';
         }
@@ -41,7 +43,8 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                 file: error ? null : selectedFile,
                 previewUrl: error ? null : URL.createObjectURL(selectedFile),
                 sizeBytes: error ? null : selectedFile.size,
-                error
+                error,
+                uploadProgress: 0
             }
         }));
     };
@@ -94,11 +97,21 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                     fileCategory: type
                 });
 
-                // Step 2: Upload to S3 directly
+                // Step 2: Upload to S3 directly with progress
                 await axios.put(presignedData.uploadUrl, meta.file, {
                     headers: {
                         'Content-Type': meta.file!.type,
                         'x-amz-acl': 'public-read'
+                    },
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || meta.file!.size));
+                        setVideos(prev => ({
+                            ...prev,
+                            [type]: {
+                                ...prev[type],
+                                uploadProgress: percentCompleted
+                            }
+                        }));
                     }
                 });
 
@@ -138,6 +151,34 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
         );
     }
 
+    const DropzoneArea = ({ type }: { type: 'RENDER' | 'IA' }) => {
+        const onDrop = useCallback((acceptedFiles: File[]) => {
+            if (acceptedFiles && acceptedFiles.length > 0) {
+                handleFileChange(type, acceptedFiles[0]);
+            }
+        }, [type]);
+
+        const { getRootProps, getInputProps, isDragActive } = useDropzone({
+            onDrop,
+            accept: { 'video/mp4': ['.mp4'] },
+            maxFiles: 1
+        });
+
+        return (
+            <div 
+                {...getRootProps()} 
+                className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-colors relative ${isDragActive ? 'border-brand-purple bg-brand-purple/10' : 'border-white/20 hover:border-brand-purple/50 bg-[#111]'}`}
+            >
+                <input {...getInputProps()} />
+                <Upload className={`mx-auto mb-4 ${isDragActive ? 'text-brand-purple' : 'text-gray-400'}`} size={40} />
+                <p className="text-lg font-bold text-white mb-2">
+                    {isDragActive ? 'Suelta el archivo aquí...' : 'Haz clic o arrastra tu MP4 aquí'}
+                </p>
+                <p className="text-sm text-gray-500">Video {type} (1024x2048, 25s-30s)</p>
+            </div>
+        );
+    };
+
     const renderDropzone = (type: 'RENDER' | 'IA') => {
         const meta = videos[type];
         
@@ -159,19 +200,12 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                 )}
 
                 {!meta.file ? (
-                    <div className="border-2 border-dashed border-white/20 hover:border-brand-purple/50 bg-[#111] rounded-2xl p-8 text-center cursor-pointer transition-colors relative">
-                        <input 
-                            type="file" 
-                            accept="video/mp4"
-                            onChange={(e) => handleFileChange(type, e.target.files?.[0])}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <Upload className="mx-auto text-gray-400 mb-4" size={40} />
-                        <p className="text-lg font-bold text-white mb-2">Haz clic o arrastra tu MP4 aquí</p>
-                        <p className="text-sm text-gray-500">Video {type} (1024x2048, 25s-30s)</p>
-                    </div>
+                    <DropzoneArea type={type} />
                 ) : (
-                    <div className="bg-[#111] rounded-2xl p-6 border border-white/10">
+                    <div className="bg-[#111] rounded-2xl p-6 border border-white/10 relative overflow-hidden">
+                        {isUploading && (
+                            <div className="absolute top-0 left-0 h-1 bg-brand-purple transition-all duration-300 z-10" style={{ width: \`\${meta.uploadProgress}%\` }}></div>
+                        )}
                         <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center text-green-500">
@@ -183,7 +217,7 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                                 </div>
                             </div>
                             <button 
-                                onClick={() => setVideos(prev => ({ ...prev, [type]: { file: null, previewUrl: null, duration: null, resolution: null, sizeBytes: null, error: null } }))}
+                                onClick={() => setVideos(prev => ({ ...prev, [type]: { file: null, previewUrl: null, duration: null, resolution: null, sizeBytes: null, error: null, uploadProgress: 0 } }))}
                                 className="text-gray-400 hover:text-red-400 p-2"
                                 disabled={isUploading}
                             >
@@ -204,6 +238,9 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                         {meta.duration && (
                             <p className="text-center text-xs text-green-400 font-medium">✅ Validado: {meta.resolution} @ {meta.duration.toFixed(1)}s</p>
                         )}
+                        {isUploading && (
+                            <p className="text-center text-xs text-brand-purple font-bold mt-2">Subiendo... {meta.uploadProgress}%</p>
+                        )}
                     </div>
                 )}
             </div>
@@ -220,7 +257,7 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                     <li>Resolución Exacta: <strong className="text-white">1024 x 2048 píxeles</strong></li>
                     <li>Duración Exacta: <strong className="text-white">Entre 25 y 30 segundos</strong></li>
                     <li>Formato: <strong className="text-white">MP4 (H.264)</strong></li>
-                    <li>Peso Máximo: <strong className="text-white">50 MB</strong></li>
+                    <li>Peso Máximo: <strong className="text-white">500 MB</strong></li>
                 </ul>
             </div>
 

@@ -73,6 +73,11 @@ export async function sendEmail2VideoRecibido(
                         <td style="padding: 8px; border: 1px solid #ddd;">video/mp4</td>
                         <td style="padding: 8px; border: 1px solid #ddd; color: ${v.fileType.includes('mp4') ? 'green' : 'red'};">${v.fileType}</td>
                     </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">FPS</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">30</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: ${Math.abs((v.fps || 0) - 30) <= 1 ? 'green' : 'red'};">${v.fps ? v.fps.toFixed(2) : 0}</td>
+                    </tr>
                 </table>
 
                 ${v.warnings && v.warnings.length > 0 ? `

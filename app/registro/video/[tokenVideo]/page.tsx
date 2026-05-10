@@ -29,7 +29,11 @@ export default async function DeferredVideoUploadPage({ params }: { params: { to
         );
     }
 
-    if (inscripcion.estatusInscripcion === 'COMPLETADO') {
+    const deadline = new Date('2026-06-05T23:59:59Z');
+    const isCompleted = inscripcion.estatusInscripcion === 'COMPLETADO';
+    const isBeforeDeadline = new Date() <= deadline;
+
+    if (isCompleted && !isBeforeDeadline) {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
                 <div className="bg-[#111] p-10 rounded-2xl max-w-lg w-full text-center border border-green-500/20">
@@ -52,6 +56,16 @@ export default async function DeferredVideoUploadPage({ params }: { params: { to
                         Hola {inscripcion.nombre}, por favor sube tu video final para completar tu participación.
                     </p>
                 </div>
+
+                {isCompleted && isBeforeDeadline && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 p-6 rounded-2xl mb-8 text-center">
+                        <h2 className="text-xl font-bold mb-2">⚠️ Obra Ya Cargada</h2>
+                        <p className="text-sm">
+                            Ya cargaste tu(s) video(s) anteriormente. Sin embargo, tienes oportunidad de reemplazarlo(s) hasta el 5 de junio.
+                            <strong> Si subes un nuevo video, el anterior será eliminado.</strong>
+                        </p>
+                    </div>
+                )}
                 
                 <div className="bg-[#0a0a0a] border border-white/10 p-8 rounded-3xl shadow-2xl">
                     <VideoUploadClient tokenVideo={tokenVideo} categoria={inscripcion.categoria} />

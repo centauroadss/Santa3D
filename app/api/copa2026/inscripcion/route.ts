@@ -47,13 +47,21 @@ export async function POST(req: Request) {
     const bufferComprobante = Buffer.from(arrayBufferComprobante);
     const fileHash = crypto.createHash('sha256').update(bufferComprobante).digest('hex');
 
-    const pagoExistente = await prisma.pagoMovil.findUnique({
+    const pagoExistenteHash = await prisma.pagoMovil.findUnique({
       where: { fileHash }
     });
 
-    if (pagoExistente) {
+    const pagoExistenteDatos = await prisma.pagoMovil.findFirst({
+      where: {
+        bancoOrigenCodigo: bancoOrigen,
+        telefonoPago: telefonoPago,
+        referencia: referencia
+      }
+    });
+
+    if (pagoExistenteHash || pagoExistenteDatos) {
       return NextResponse.json({ 
-        error: 'Este comprobante de pago ya fue utilizado en otra inscripción. Intento de fraude detectado.' 
+        error: 'Este comprobante de pago o esta transacción ya fue utilizada en otra inscripción. Intento de fraude detectado.' 
       }, { status: 400 });
     }
 

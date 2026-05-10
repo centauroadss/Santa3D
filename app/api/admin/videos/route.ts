@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth';
 import { StorageService } from '@/lib/storage';
 export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await authenticateRequest(request);
@@ -10,72 +11,81 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const videos = await prisma.videoCopa2026.findMany({
+    const inscripciones = await prisma.inscripcionCopa2026.findMany({
       include: { 
-          inscripcion: {
-              include: { pago: true }
-          } 
+          pago: true,
+          videos: true
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const formattedVideos = await Promise.all(videos.map(async (video) => {
-      // Determinamos categoría individual del video si la inscripción es AMBAS
-      let categoriaVideo = video.inscripcion.categoria;
-      if (categoriaVideo === 'AMBAS') {
-          if (video.rutaS3.includes('render/')) categoriaVideo = 'RENDER';
-          else if (video.rutaS3.includes('ia/')) categoriaVideo = 'IA';
-      }
-
-      // GENERACIÓN DE URL FIRMADA (VIDEO)
-      let playUrl = null;
-      if (video.rutaS3) {
+    const formattedInscripciones = await Promise.all(inscripciones.map(async (insc) => {
+      // Foto Perfil
+      let fotoPerfilUrl = null;
+      if (insc.fotoPerfilPath) {
           try {
-              playUrl = await StorageService.getSignedVideoUrl(video.rutaS3);
-          } catch (err) {
-              console.error(`Error generating signed URL for video ${video.id}:`, err);
-          }
+              fotoPerfilUrl = await StorageService.getSignedVideoUrl(insc.fotoPerfilPath);
+          } catch (err) {}
       }
 
-      // GENERACIÓN DE URL FIRMADA (COMPROBANTE PAGO)
+      // Comprobante Pago
       let comprobanteUrl = null;
-      if (video.inscripcion.pago?.comprobantePath) {
+      if (insc.pago?.comprobantePath) {
           try {
-              comprobanteUrl = await StorageService.getSignedVideoUrl(video.inscripcion.pago.comprobantePath);
-          } catch (err) {
-              console.error(`Error generating signed URL for receipt ${video.inscripcion.id}:`, err);
-          }
+              comprobanteUrl = await StorageService.getSignedVideoUrl(insc.pago.comprobantePath);
+          } catch (err) {}
       }
 
-      const warnings = video.warnings as any || [];
+      const formattedVideos = await Promise.all(insc.videos.map(async (v) => {
+          let playUrl = null;
+          if (v.rutaS3) {
+              try {
+                  playUrl = await StorageService.getSignedVideoUrl(v.rutaS3);
+              } catch (err) {}
+          }
+          
+          let categoriaVideo = insc.categoria;
+          if (categoriaVideo === 'AMBAS') {
+              if (v.rutaS3.includes('render/')) categoriaVideo = 'RENDER';
+              else if (v.rutaS3.includes('ia/')) categoriaVideo = 'IA';
+          }
+
+          return {
+              id: v.id.toString(),
+              fileName: v.nombreArchivo,
+              url: playUrl,
+              categoria: categoriaVideo,
+              status: v.estatus,
+              uploadedAt: v.createdAt.toISOString(),
+              fileSize: Number(v.tamanoBytes),
+              format: v.formato || '-',
+              resolution: v.resolucion || '-',
+              fps: v.fps || '-',
+              duration: v.duracionSeg || '-',
+              warnings: v.warnings as any || []
+          };
+      }));
 
       return {
-        id: video.id.toString(),
-        participantName: `${video.inscripcion.nombre} ${video.inscripcion.apellido}`,
-        email: video.inscripcion.email,
-        telefono: video.inscripcion.telefono,
-        categoria: categoriaVideo,
-        categoriaInscripcion: video.inscripcion.categoria,
-        fileName: video.nombreArchivo,
-        url: playUrl,
+        id: insc.id.toString(),
+        participantName: `${insc.nombre} ${insc.apellido}`,
+        email: insc.email,
+        telefono: insc.telefono,
+        categoria: insc.categoria,
+        estatusInscripcion: insc.estatusInscripcion,
+        createdAt: insc.createdAt.toISOString(),
+        fotoPerfilUrl: fotoPerfilUrl,
         comprobanteUrl: comprobanteUrl,
-        status: video.estatus,
-        uploadedAt: video.createdAt.toISOString(),
-        fileSize: Number(video.tamanoBytes),
-        format: video.formato || '-',
-        resolution: video.resolucion || '-',
-        fps: video.fps || '-',
-        duration: video.duracionSeg || '-',
-        warnings: warnings
+        videos: formattedVideos
       };
     }));
 
     return NextResponse.json({
       success: true,
-      data: formattedVideos,
+      data: formattedInscripciones,
     });
   } catch (error: any) {
-    console.error('Error fetching admin videos:', error);
+    console.error('Error fetching admin inscripciones:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

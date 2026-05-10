@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </Link>
                     <Link href="/admin/videos" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/videos' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
                         <FileVideo size={18} />
-                        Videos
+                        Inscripciones
                     </Link>
                     <Link href="/admin/instagram" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/instagram' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
                         <Image size={18} />
@@ -82,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </Link>
                     <Link href="/admin/inscripcion" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/inscripcion' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
                         <Settings size={18} />
-                        Inscripción
+                        Config. Inscripción
                     </Link>
                     <Link href="/admin/configuracion" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${pathname === '/admin/configuracion' ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/30' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}>
                         <Settings size={18} />

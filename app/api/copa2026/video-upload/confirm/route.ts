@@ -16,20 +16,69 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 });
         }
 
+        const deadline = new Date('2026-06-05T23:59:59Z');
         if (inscripcion.estatusInscripcion === 'COMPLETADO') {
-            return NextResponse.json({ error: 'El video ya fue cargado' }, { status: 400 });
+            if (new Date() > deadline) {
+                return NextResponse.json({ error: 'El video ya fue cargado y el plazo de reemplazo venció.' }, { status: 400 });
+            } else {
+                // Borrar videos anteriores si está reemplazando
+                await prisma.videoCopa2026.deleteMany({
+                    where: { inscripcionId: inscripcion.id }
+                });
+            }
         }
 
-        // Preparar array de datos para Prisma
-        const videosData = videos.map((v: any) => ({
-            rutaS3: v.urlVideo,
-            nombreArchivo: v.fileName,
-            tamanoBytes: BigInt(v.sizeBytes || 0),
-            duracionSeg: Math.round(v.durationSeg || 0),
-            resolucion: v.resolution,
-            formato: v.fileType,
-            estatus: 'RECIBIDO'
-        }));
+        // Procesar cada video subido con FFProbe
+        const { analyzeVideo } = await import('@/lib/copa2026/video-validation');
+        const videosData = [];
+        
+        for (const v of videos) {
+            let analysisResults = { warnings: [] as string[], fps: null as number | null };
+            let finalDuration = Math.round(v.durationSeg || 0);
+            let finalResolution = v.resolution;
+            let finalFormat = v.fileType;
+
+            try {
+                // Descargar y validar temporalmente
+                const validation = await analyzeVideo(v.urlVideo);
+                analysisResults.warnings = validation.warnings;
+                
+                if (validation.fps) analysisResults.fps = validation.fps;
+                if (validation.duration) finalDuration = validation.duration;
+                if (validation.resolution) finalResolution = validation.resolution;
+                if (validation.format) finalFormat = validation.format;
+
+                // Extra warnings for format and fps if not caught
+                if (!finalFormat || !finalFormat.includes('mp4')) {
+                    analysisResults.warnings.push('Formato incorrecto. Se esperaba video/mp4 (H.264).');
+                }
+                if (!analysisResults.fps || Math.abs(analysisResults.fps - 30) > 1) {
+                    analysisResults.warnings.push(`Los FPS (${analysisResults.fps || 'N/A'}) no coinciden con los 30 exigidos.`);
+                }
+            } catch (err) {
+                console.error('Error analyzing video with ffprobe:', err);
+                analysisResults.warnings.push('No se pudo verificar técnicamente el video (Error en FFProbe).');
+            }
+
+            videosData.push({
+                rutaS3: v.urlVideo,
+                nombreArchivo: v.fileName,
+                tamanoBytes: BigInt(v.sizeBytes || 0),
+                duracionSeg: finalDuration,
+                resolucion: finalResolution,
+                formato: finalFormat,
+                fps: analysisResults.fps,
+                warnings: analysisResults.warnings,
+                estatus: 'RECIBIDO'
+            });
+            
+            // Add warnings and fps to the client payload object for the email template
+            v.warnings = analysisResults.warnings;
+            v.fps = analysisResults.fps;
+            v.durationSeg = finalDuration;
+            v.resolution = finalResolution;
+            v.formato = finalFormat;
+        }
 
         // Actualizar Inscripción y crear registros de Video
         await prisma.inscripcionCopa2026.update({
@@ -46,80 +95,14 @@ export async function POST(req: Request) {
         });
 
         // 4. Enviar Email de Validación de Video
-        if (process.env.RESEND_API_KEY) {
-            const { Resend } = await import('resend');
-            const resend = new Resend(process.env.RESEND_API_KEY);
-
-            let emailHtml = `
-            <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #e53e3e;">🎄 Constancia de Participación</h1>
-                <p>Hola <strong>${inscripcion.nombre}</strong>,</p>
-                <p>¡Tus obras han sido recibidas exitosamente y están listas para curaduría!</p>
-                
-                ${videos.map((v: any) => `
-                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3 style="margin-top: 0;">Categoría: ${v.categoriaVideo || inscripcion.categoria}</h3>
-                    <ul style="list-style: none; padding: 0;">
-                        <li><strong>Archivo:</strong> ${v.fileName}</li>
-                        <li><strong>Tamaño:</strong> ${(v.sizeBytes / 1024 / 1024).toFixed(2)} MB</li>
-                        <li><strong>Fecha:</strong> ${new Date().toLocaleString('es-VE')}</li>
-                        <li><strong>Participante:</strong> ${inscripcion.nombre} ${inscripcion.apellido}</li>
-                    </ul>
-                    <p>✅ El concursante aceptó los términos y condiciones del concurso.</p>
-                    <p>✅ El anunciante confirmó seguir la cuenta de @centauroads en Instagram.</p>
-
-                    <h4>📋 Reporte Técnico del Video</h4>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
-                        <tr style="background: #eee;">
-                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Dato</th>
-                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Esperado</th>
-                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Recibido</th>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #ddd;">Resolución</td>
-                            <td style="padding: 8px; border: 1px solid #ddd;">1024x2048</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; color: ${v.resolution === '1024x2048' ? 'green' : 'red'};">${v.resolution}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #ddd;">Duración</td>
-                            <td style="padding: 8px; border: 1px solid #ddd;">30s</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; color: ${Math.round(v.durationSeg || 0) === 30 ? 'green' : 'red'};">${v.durationSeg ? v.durationSeg.toFixed(1) : 0}s</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #ddd;">Formato</td>
-                            <td style="padding: 8px; border: 1px solid #ddd;">video/mp4</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; color: ${v.fileType === 'video/mp4' ? 'green' : 'red'};">${v.fileType}</td>
-                        </tr>
-                    </table>
-                </div>
-                `).join('')}
-
-                <p style="font-size: 12px; color: #666;">* Hemos adjuntado una copia de tus videos a este correo como respaldo (si pesan menos de 35MB).</p>
-
-                <div style="background: #eef2ff; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                    <h3 style="margin-top:0; color: #4f46e5;">🚀 Siguientes Pasos</h3>
-                    <p><strong>1️⃣ Publícalo en Instagram</strong><br>Sube tu video (Reel/Post) y menciona a @centauroads. ¡Tu perfil debe ser público!</p>
-                    <p><strong>2️⃣ Consigue Likes ❤️</strong><br>Comparte tu publicación. Los videos más votados pasarán a la ronda final.</p>
-                </div>
-            </div>
-            `;
-
-            // Prepare attachments for videos under 35MB
-            const validAttachments = videos
-                .filter((v: any) => v.sizeBytes < 35 * 1024 * 1024)
-                .map((v: any) => ({
-                    filename: v.fileName,
-                    path: v.urlVideo
-                }));
-
-            await resend.emails.send({
-                from: 'Copa 2026 <no-reply@centauroads.com>',
-                to: inscripcion.email,
-                subject: '✅ Video Recibido Exitosamente - Copa 2026',
-                html: emailHtml,
-                attachments: validAttachments
-            });
-        }
+        const { sendEmail2VideoRecibido } = await import('@/lib/copa2026/emails/email2-video-recibido');
+        await sendEmail2VideoRecibido(
+            inscripcion.email,
+            inscripcion.nombre,
+            inscripcion.apellido,
+            inscripcion.categoria,
+            videos
+        );
 
         return NextResponse.json({ success: true });
 
