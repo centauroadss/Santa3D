@@ -130,8 +130,11 @@ export async function POST(req: Request) {
     try {
       savedComprobantePath = await StorageService.saveFile(bufferComprobante, fileNameComprobante, comprobanteFile.type);
       savedFotoPath = await StorageService.saveFile(bufferFoto, fileNameFoto, fotoPerfilFile.type);
-    } catch (e) {
-      console.error("Error al guardar imágenes en StorageService, usando paths por defecto:", e);
+    } catch (e: any) {
+      console.error("Error al guardar imágenes en StorageService:", e);
+      return NextResponse.json({ 
+        error: `Error al subir imágenes al servidor de almacenamiento en la nube (S3): ${e.message || 'Credenciales inválidas o error de red'}. Por favor, verifica la configuración de DigitalOcean Spaces en EasyPanel.` 
+      }, { status: 500 });
     }
 
     // 3. Crear Inscripción en BD
