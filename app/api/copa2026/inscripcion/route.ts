@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Resend } from 'resend';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import { StorageService } from '@/lib/storage';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_mock');
 const s3Client = new S3Client({
