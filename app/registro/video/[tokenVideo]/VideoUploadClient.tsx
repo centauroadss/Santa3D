@@ -204,7 +204,7 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                 ) : (
                     <div className="bg-[#111] rounded-2xl p-6 border border-white/10 relative overflow-hidden">
                         {isUploading && (
-                            <div className="absolute top-0 left-0 h-1 bg-brand-purple transition-all duration-300 z-10" style={{ width: \`\${meta.uploadProgress}%\` }}></div>
+                            <div className="absolute top-0 left-0 h-1 bg-brand-purple transition-all duration-300 z-10" style={{ width: `${meta.uploadProgress}%` }}></div>
                         )}
                         <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
                             <div className="flex items-center gap-3">
