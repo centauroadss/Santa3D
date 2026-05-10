@@ -25,7 +25,16 @@ export async function POST(req: Request) {
     const cedulaIdentidad = formData.get('cedulaIdentidad') as string;
     const email = formData.get('email') as string;
     const telefono = formData.get('telefono') as string;
+    const instagram = formData.get('instagram') as string;
+    const fechaNacimientoStr = formData.get('fechaNacimiento') as string;
     const categoria = formData.get('categoria') as 'RENDER' | 'IA' | 'AMBAS';
+    
+    let fechaNacimiento: Date | null = null;
+    let edad: number = 0;
+    if (fechaNacimientoStr) {
+      fechaNacimiento = new Date(fechaNacimientoStr);
+      edad = Math.floor((new Date().getTime() - fechaNacimiento.getTime()) / 31557600000);
+    }
     
     const fotoPerfilFile = formData.get('fotoPerfilFile') as File;
     const telefonoPago = formData.get('telefonoPago') as string;
@@ -137,6 +146,9 @@ export async function POST(req: Request) {
         apellido,
         telefono,
         email,
+        instagram,
+        fechaNacimiento,
+        edad,
         categoria,
         tokenVideo,
         tokenExpiry,

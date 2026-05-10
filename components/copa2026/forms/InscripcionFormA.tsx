@@ -13,6 +13,7 @@ const formSchema = z.object({
   email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'El email debe tener un @ y un sufijo válido (ej. usuario@dominio.com)'),
   telefono: z.string().regex(/^(?:\+58|0)?(412|422|414|424|416|426)\d{7}$/, 'Debe empezar con +58 o 0 seguido del prefijo válido (ej: 412, 414) y tener 10 dígitos'),
   instagram: z.string().regex(/^@[\w.-]+$/, 'Debe empezar con @').min(2, 'Requerido'),
+  fechaNacimiento: z.string().min(1, 'La fecha de nacimiento es requerida'),
   categoria: z.enum(['RENDER', 'IA', 'AMBAS'], {
     required_error: 'Debes seleccionar una categoría',
   }),
@@ -200,9 +201,34 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
           <input
             {...register('instagram')}
             className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
-            placeholder="@tu_usuario"
+            placeholder="@usuario"
           />
           {errors.instagram && <p className="text-red-500 text-xs mt-1">{errors.instagram.message}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Fecha de Nacimiento</label>
+          <input
+            {...register('fechaNacimiento')}
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+            type="date"
+            max={new Date().toISOString().split('T')[0]}
+          />
+          {errors.fechaNacimiento && <p className="text-red-500 text-xs mt-1">{errors.fechaNacimiento.message}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-gray-300 mb-2">Edad Calculada</label>
+          <input
+            readOnly
+            value={
+              watch('fechaNacimiento') 
+                ? Math.floor((new Date().getTime() - new Date(watch('fechaNacimiento')).getTime()) / 31557600000) 
+                : 0
+            }
+            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-gray-500 outline-none cursor-not-allowed"
+          />
         </div>
       </div>
 

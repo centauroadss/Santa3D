@@ -25,6 +25,8 @@ interface InscripcionData {
     id: string;
     participantName: string;
     cedulaIdentidad: string;
+    fechaNacimiento: string | null;
+    edad: number | null;
     instagram: string;
     email: string;
     telefono: string;
@@ -271,6 +273,9 @@ export default function AdminInscripcionesPage() {
                                             </span>
                                         </div>
                                         <div className="text-[10px] text-gray-500 font-mono mt-1">C.I: {insc.cedulaIdentidad}</div>
+                                        {insc.fechaNacimiento && (
+                                            <div className="text-[10px] text-gray-500 font-mono">Nac: {new Date(insc.fechaNacimiento).toLocaleDateString()} ({insc.edad} años)</div>
+                                        )}
                                         <div className="text-[10px] text-brand-purple font-mono font-bold">{insc.instagram}</div>
                                         <div className="text-[10px] text-gray-400 font-mono mt-1">{insc.email}</div>
                                         <div className="text-[10px] text-gray-400 font-mono">{insc.telefono}</div>

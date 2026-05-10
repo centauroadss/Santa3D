@@ -227,6 +227,9 @@ model InscripcionCopa2026 {
   telefono           String             @db.VarChar(15)
   email              String             @db.VarChar(150)
   categoria          CategoriaVideo
+  instagram          String?            @db.VarChar(100)
+  fechaNacimiento    DateTime?
+  edad               Int?               @default(0)
   tokenVideo         String             @unique @db.VarChar(36)
   tokenExpiry        DateTime
   estatusToken       EstatusToken       @default(PENDIENTE)

@@ -25,6 +25,8 @@ export const StorageService = {
     return `${prefix}/${uuidv4()}${ext}`;
   },
   getUrl: async (key: string) => {
+    if (!key) return null;
+    if (key.startsWith('http') || key.startsWith('/uploads/')) return key;
     if (STORAGE_PROVIDER === 'local') return `/uploads/${key}`;
 
     // BACKUP LOGIC: Use raw endpoint. This creates double-bucket URLs if endpoint has bucket.
