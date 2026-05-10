@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local';
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 's3';
 const S3_BUCKET = process.env.AWS_S3_BUCKET || 'santa3d-assets';
 const REGION = process.env.AWS_REGION || 'us-east-1';
 
