@@ -39,7 +39,8 @@ export const StorageService = {
     // BACKUP LOGIC: Use raw endpoint. This creates double-bucket URLs if endpoint has bucket.
     // Preserving this behavior as it matches "Working State" history.
     if (process.env.AWS_ENDPOINT && process.env.AWS_ENDPOINT.includes('digitaloceanspaces')) {
-      return `${process.env.AWS_ENDPOINT}/${S3_BUCKET}/${key}`;
+      const base = cleanEndpoint.replace('https://', `https://${S3_BUCKET}.`).replace('http://', `http://${S3_BUCKET}.`);
+      return `${base}/${key}`;
     }
 
     return `https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
@@ -84,7 +85,8 @@ export const StorageService = {
     await s3Client.send(command);
 
     if (process.env.AWS_ENDPOINT && process.env.AWS_ENDPOINT.includes('digitaloceanspaces')) {
-      return `${process.env.AWS_ENDPOINT}/${S3_BUCKET}/${key}`;
+      const base = cleanEndpoint.replace('https://', `https://${S3_BUCKET}.`).replace('http://', `http://${S3_BUCKET}.`);
+      return `${base}/${key}`;
     }
 
     return `https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/${key}`;
