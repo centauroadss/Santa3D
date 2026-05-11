@@ -192,11 +192,14 @@ export async function POST(req: Request) {
     try {
       const template = await prisma.plantillaEmail.findUnique({ where: { tipo: 'BIENVENIDA' } });
       if (template) {
+        const fechaActual = new Date().toLocaleDateString('es-VE', { year: 'numeric', month: 'long', day: 'numeric' });
         emailSubject = template.asunto;
         emailHtml = template.contenidoHtml
-          .replace('{{nombre}}', nombre)
-          .replace('{{categoria}}', categoria)
-          .replace('{{token_link}}', uploadLink);
+          .replace(/{{nombre}}/g, nombre)
+          .replace(/{{categoria}}/g, categoria)
+          .replace(/{{concurso}}/g, categoria)
+          .replace(/{{fecha_inscripcion}}/g, fechaActual)
+          .replace(/{{token_link}}/g, uploadLink);
       }
     } catch (e) {
       console.error("No se pudo cargar la plantilla de la BD", e);
@@ -221,6 +224,10 @@ export async function POST(req: Request) {
           {
             filename: `pago_${referencia}.${compExt}`,
             content: bufferComprobante
+          },
+          {
+            filename: `foto_perfil_${cedulaIdentidad}.${fotoExt}`,
+            content: bufferFoto
           }
         ]
       });
