@@ -3,12 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export default function EmailConfigAndLogs() {
-    const [config, setConfig] = useState({
-        url_adjunto_registro_video: '',
-        url_adjunto_certificado: '',
-        url_adjunto_bienvenida_juez: '',
-        url_adjunto_agradecimiento_juez: ''
-    });
+    const [dynamicLinks, setDynamicLinks] = useState<any[]>([]);
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -28,7 +23,7 @@ export default function EmailConfigAndLogs() {
             const configData = await configRes.json();
             const logsData = await logsRes.json();
 
-            if (configData.success) setConfig(configData.data);
+            if (configData.success && configData.data.dynamicLinks) setDynamicLinks(configData.data.dynamicLinks);
             if (logsData.success) setLogs(logsData.data);
         } catch (error) {
             console.error('Error fetching email data', error);
@@ -46,12 +41,12 @@ export default function EmailConfigAndLogs() {
             const res = await fetch('/api/admin/emails/config', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify({ dynamicLinks })
             });
 
             const data = await res.json();
             if (data.success) {
-                setMessage('Configuración guardada exitosamente.');
+                setMessage('Enlaces guardados exitosamente.');
             } else {
                 setMessage('Error al guardar configuración: ' + data.error);
             }
@@ -61,6 +56,20 @@ export default function EmailConfigAndLogs() {
             setSaving(false);
             setTimeout(() => setMessage(''), 3000);
         }
+    };
+
+    const handleAddLink = () => {
+        setDynamicLinks([...dynamicLinks, { id: Date.now().toString(), name: '', url: '' }]);
+    };
+
+    const handleRemoveLink = (id: string) => {
+        setDynamicLinks(dynamicLinks.filter(link => link.id !== id));
+    };
+
+    const handleLinkChange = (id: string, field: 'name' | 'url', value: string) => {
+        setDynamicLinks(dynamicLinks.map(link => 
+            link.id === id ? { ...link, [field]: value } : link
+        ));
     };
 
     const formatDate = (dateString: string) => {
@@ -84,73 +93,69 @@ export default function EmailConfigAndLogs() {
         <div className="space-y-10 mt-10">
             {/* Configuración de Adjuntos */}
             <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-                <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
-                    <h3 className="text-lg font-medium text-gray-900">1. Enlaces a Archivos Adjuntos</h3>
-                    <p className="text-sm text-gray-500 mt-1">Ingresa el enlace directo (URL pública) del archivo (PDF, Imagen, etc) que se adjuntará nativamente en cada tipo de correo. Los archivos deben pesar menos de 20MB.</p>
+                <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <div>
+                        <h3 className="text-lg font-medium text-gray-900">1. Enlaces Personalizados</h3>
+                        <p className="text-sm text-gray-500 mt-1">Crea y edita tus enlaces (URLs públicas) para adjuntar en los correos u otras secciones. Ej: https://tudominio.com/pdf.</p>
+                    </div>
+                    <button 
+                        type="button" 
+                        onClick={handleAddLink}
+                        className="bg-white border border-[#85439a] text-[#85439a] px-3 py-1.5 rounded-md shadow-sm hover:bg-purple-50 text-sm font-medium"
+                    >
+                        + Agregar Enlace
+                    </button>
                 </div>
                 
                 <form onSubmit={handleSaveConfig} className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                URL - Constancia de Registro de Video (Concursante)
-                            </label>
-                            <input
-                                type="url"
-                                value={config.url_adjunto_registro_video}
-                                onChange={(e) => setConfig({ ...config, url_adjunto_registro_video: e.target.value })}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#85439a] focus:border-[#85439a] text-sm"
-                                placeholder="https://mi-servidor.com/instrucciones.pdf"
-                            />
+                    {dynamicLinks.length === 0 ? (
+                        <p className="text-gray-500 italic">No hay enlaces configurados. Haz clic en Agregar Enlace.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {dynamicLinks.map((link, index) => (
+                                <div key={link.id} className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-md border border-gray-200">
+                                    <div className="w-full md:w-1/3">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Nombre (ej. Certificado)</label>
+                                        <input
+                                            type="text"
+                                            value={link.name}
+                                            onChange={(e) => handleLinkChange(link.id, 'name', e.target.value)}
+                                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#85439a] focus:border-[#85439a] text-sm"
+                                            placeholder="Nombre del Enlace"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="w-full md:flex-1">
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">URL / Dirección Web</label>
+                                        <input
+                                            type="url"
+                                            value={link.url}
+                                            onChange={(e) => handleLinkChange(link.id, 'url', e.target.value)}
+                                            className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#85439a] focus:border-[#85439a] text-sm"
+                                            placeholder="https://..."
+                                            required
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveLink(link.id)}
+                                        className="text-red-500 hover:text-red-700 p-2"
+                                        title="Eliminar enlace"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            ))}
                         </div>
+                    )}
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                URL - Certificado de Participación
-                            </label>
-                            <input
-                                type="url"
-                                value={config.url_adjunto_certificado}
-                                onChange={(e) => setConfig({ ...config, url_adjunto_certificado: e.target.value })}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#85439a] focus:border-[#85439a] text-sm"
-                                placeholder="https://mi-servidor.com/certificado.pdf"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                URL - Bienvenida a Juez (Hoja de Ruta)
-                            </label>
-                            <input
-                                type="url"
-                                value={config.url_adjunto_bienvenida_juez}
-                                onChange={(e) => setConfig({ ...config, url_adjunto_bienvenida_juez: e.target.value })}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#85439a] focus:border-[#85439a] text-sm"
-                                placeholder="https://mi-servidor.com/guia-jueces.pdf"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                URL - Agradecimiento a Juez (Reporte Final)
-                            </label>
-                            <input
-                                type="url"
-                                value={config.url_adjunto_agradecimiento_juez}
-                                onChange={(e) => setConfig({ ...config, url_adjunto_agradecimiento_juez: e.target.value })}
-                                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-[#85439a] focus:border-[#85439a] text-sm"
-                                placeholder="https://mi-servidor.com/reporte-final.pdf"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 mt-6">
                         <button
                             type="submit"
                             disabled={saving}
-                            className="bg-[#85439a] text-white px-4 py-2 rounded-md shadow-sm hover:bg-[#6c367d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#85439a] disabled:opacity-50"
+                            className="bg-[#85439a] text-white px-4 py-2 rounded-md shadow-sm hover:bg-[#6c367d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#85439a] disabled:opacity-50 font-medium"
                         >
-                            {saving ? 'Guardando...' : 'Guardar Enlaces'}
+                            {saving ? 'Guardando...' : 'Guardar Todos los Enlaces'}
                         </button>
                         {message && (
                             <span className={`text-sm font-medium ${message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>

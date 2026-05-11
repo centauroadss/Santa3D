@@ -214,7 +214,7 @@ export async function POST(req: Request) {
     } catch(e) {}
 
     if (process.env.RESEND_API_KEY) {
-      await resend.emails.send({
+      const res = await resend.emails.send({
         from: 'Copa 2026 <no-reply@centauroads.com>',
         to: email,
         bcc: bccEmails,
@@ -231,6 +231,23 @@ export async function POST(req: Request) {
           }
         ]
       });
+
+      // Registrar en la base de datos para el Monitor de Envíos (Logs)
+      if (res && res.data && res.data.id) {
+        try {
+          await prisma.emailLog.create({
+            data: {
+              resendId: res.data.id,
+              to: email,
+              subject: emailSubject,
+              tipo: 'BIENVENIDA',
+              status: 'ENVIADO'
+            }
+          });
+        } catch (logError) {
+          console.error("No se pudo guardar el log de email:", logError);
+        }
+      }
     }
 
     return NextResponse.json({ success: true, inscripcionId: inscripcion.id });
