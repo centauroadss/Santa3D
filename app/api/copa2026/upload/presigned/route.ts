@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { StorageService } from '@/lib/storage';
 
 const prisma = new PrismaClient();
-
-const s3Client = new S3Client({
-    endpoint: 'https://nyc3.digitaloceanspaces.com', // DO Spaces
-    region: 'us-east-1',
-    credentials: {
-        accessKeyId: process.env.DO_SPACES_KEY || '',
-        secretAccessKey: process.env.DO_SPACES_SECRET || '',
-    }
-});
 
 export async function POST(req: Request) {
     try {
@@ -32,23 +22,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'El video ya fue cargado' }, { status: 400 });
         }
 
-        const bucket = process.env.DO_SPACES_BUCKET_VIDEOS || 'copa2026-videos';
         const fileExt = fileName.split('.').pop() || 'mp4';
         const safeCategory = fileCategory || inscripcion.categoria;
         const key = `videos/${safeCategory}/${inscripcion.id}_${uuidv4()}.${fileExt}`;
 
-        const command = new PutObjectCommand({
-            Bucket: bucket,
-            Key: key,
-            ContentType: fileType,
-            ACL: 'public-read'
-        });
-
-        // URL expira en 15 min
-        const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+        // Generar la URL de subida usando el StorageService (que ya tiene las credenciales correctas)
+        const uploadUrl = await StorageService.getUploadUrl(key, fileType);
         
-        // La URL final para acceder al archivo (siendo public-read)
-        const videoUrl = `https://${bucket}.nyc3.digitaloceanspaces.com/${key}`;
+        // Obtener la URL pública final
+        const videoUrl = await StorageService.getUrl(key);
 
         return NextResponse.json({ uploadUrl, videoUrl });
 

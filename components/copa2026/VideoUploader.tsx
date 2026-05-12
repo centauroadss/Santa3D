@@ -44,7 +44,7 @@ export default function VideoUploader({ token, onUploadSuccess }: VideoUploaderP
                     tokenVideo: token,
                     fileName: file.name,
                     fileSize: file.size,
-                    mimeType: file.type
+                    fileType: file.type
                 })
             });
 
