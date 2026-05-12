@@ -18,19 +18,41 @@ export async function GET(request: NextRequest) {
             take: 30 // Traer los últimos 30 días
         });
 
-        // AUTO-BACKFILL de fechaValor para registros antiguos
+        // AUTO-BACKFILL / RECALCULATE fechaValor for ALL historical records to ensure 100% precision
+        // This ensures dates match the correct Venezuelan business day calendar
         for (const h of historico) {
-            if (!h.fechaValor) {
-                const fecha = new Date(h.fecha);
-                fecha.setUTCDate(fecha.getUTCDate() + 1);
-                if (fecha.getUTCDay() === 6) fecha.setUTCDate(fecha.getUTCDate() + 2);
-                else if (fecha.getUTCDay() === 0) fecha.setUTCDate(fecha.getUTCDate() + 1);
-                
+            // H.fecha is stored in UTC. E.g. "03/05/2026 8:00 PM local" = "2026-05-04T00:00:00.000Z" UTC
+            // To get local Caracas date, subtract 4 hours from the UTC time
+            const localCaracasTime = new Date(h.fecha.getTime() - (4 * 60 * 60 * 1000));
+            
+            // Extract the local year, month, and day
+            const year = localCaracasTime.getUTCFullYear();
+            const month = localCaracasTime.getUTCMonth();
+            const day = localCaracasTime.getUTCDate();
+            
+            // Create a clean date object representing the local date
+            const localDate = new Date(Date.UTC(year, month, day, 0, 0, 0));
+            const dayOfWeek = localDate.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+            
+            // Calculate next business day based on the local date
+            let nextBusinessDay = day + 1; // Default to next day
+            if (dayOfWeek === 5) { // Friday -> Monday
+                nextBusinessDay = day + 3;
+            } else if (dayOfWeek === 6) { // Saturday -> Monday
+                nextBusinessDay = day + 2;
+            }
+            // For Sunday (0), next business day is Monday (day + 1), which is correctly handled by default
+
+            // Create the proper fechaValor in UTC midnight
+            const correctFechaValor = new Date(Date.UTC(year, month, nextBusinessDay, 0, 0, 0));
+
+            // Force update if it's different from current DB value (or if we just want to ensure it's exact)
+            if (!h.fechaValor || h.fechaValor.getTime() !== correctFechaValor.getTime()) {
                 await prisma.tasaBcvHistorico.update({
                     where: { id: h.id },
-                    data: { fechaValor: fecha }
+                    data: { fechaValor: correctFechaValor }
                 });
-                h.fechaValor = fecha; // Update in memory for current request
+                h.fechaValor = correctFechaValor; // Update in memory
             }
         }
 
