@@ -4,7 +4,7 @@
   "description": "Plataforma para el Concurso Santa 3D Venezolano - @centauroads",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
