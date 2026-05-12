@@ -18,6 +18,22 @@ export async function GET(request: NextRequest) {
             take: 30 // Traer los últimos 30 días
         });
 
+        // AUTO-BACKFILL de fechaValor para registros antiguos
+        for (const h of historico) {
+            if (!h.fechaValor) {
+                const fecha = new Date(h.fecha);
+                fecha.setUTCDate(fecha.getUTCDate() + 1);
+                if (fecha.getUTCDay() === 6) fecha.setUTCDate(fecha.getUTCDate() + 2);
+                else if (fecha.getUTCDay() === 0) fecha.setUTCDate(fecha.getUTCDate() + 1);
+                
+                await prisma.tasaBcvHistorico.update({
+                    where: { id: h.id },
+                    data: { fechaValor: fecha }
+                });
+                h.fechaValor = fecha; // Update in memory for current request
+            }
+        }
+
         // Obtener costos actuales para los cálculos
         const configs = await prisma.configConcurso.findMany({
             where: {
@@ -35,6 +51,7 @@ export async function GET(request: NextRequest) {
             return {
                 id: h.id,
                 fecha: h.fecha,
+                fechaValor: h.fechaValor,
                 tasaUsdBs: tasa.toFixed(4),
                 costoUnaCategoriaBs: (tasa * costoUnaCategoria).toFixed(2),
                 costoAmbasCategoriasBs: (tasa * costoAmbasCategorias).toFixed(2)
@@ -80,20 +97,29 @@ export async function POST(request: NextRequest) {
             throw new Error(`El valor extraído no es un número válido: ${JSON.stringify(data)}`);
         }
 
+        const fechaEjecucion = new Date();
+        fechaEjecucion.setUTCHours(0, 0, 0, 0);
+
         let fechaOficial = new Date();
         if (data.fechaActualizacion) {
             fechaOficial = new Date(data.fechaActualizacion);
         }
-        fechaOficial.setUTCHours(0, 0, 0, 0);
+        
+        const anio = fechaOficial.getFullYear();
+        const mes = fechaOficial.getMonth();
+        const dia = fechaOficial.getDate();
+        const fechaValorReal = new Date(Date.UTC(anio, mes, dia, 0, 0, 0));
 
         const record = await prisma.tasaBcvHistorico.upsert({
-            where: { fecha: fechaOficial },
+            where: { fecha: fechaEjecucion },
             update: {
+                fechaValor: fechaValorReal,
                 tasaUsdBs: usdValue,
                 fuenteUrl: 'https://ve.dolarapi.com/v1/dolares/oficial'
             },
             create: {
-                fecha: fechaOficial,
+                fecha: fechaEjecucion,
+                fechaValor: fechaValorReal,
                 tasaUsdBs: usdValue,
                 fuenteUrl: 'https://ve.dolarapi.com/v1/dolares/oficial'
             }

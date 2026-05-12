@@ -43,21 +43,31 @@ export async function GET(request: Request) {
       fechaOficial = new Date(data.fechaActualizacion);
     }
     
-    // Forzamos la hora a medianoche UTC para mantener consistencia en la BD
-    fechaOficial.setUTCHours(0, 0, 0, 0);
+    // Fecha Ejecucion = "Hoy" (cuando corre el scraper, típicamente la tarde del día anterior a la fecha valor)
+    const fechaEjecucion = new Date();
+    fechaEjecucion.setUTCHours(0, 0, 0, 0);
 
-    console.log(`[BCV API] Tasa USD: ${usdValue} | Fecha Valor: ${fechaOficial.toISOString()}`);
+    // Fecha Valor = El día para el cual es válida la tasa
+    // Extraemos año, mes, día exacto en base local/utc de la fecha que provee el API y forzamos medianoche
+    const anio = fechaOficial.getFullYear();
+    const mes = fechaOficial.getMonth();
+    const dia = fechaOficial.getDate();
+    const fechaValorReal = new Date(Date.UTC(anio, mes, dia, 0, 0, 0));
+
+    console.log(`[BCV API] Tasa USD: ${usdValue} | Fecha Ejecución: ${fechaEjecucion.toISOString()} | Fecha Valor: ${fechaValorReal.toISOString()}`);
 
     const record = await prisma.tasaBcvHistorico.upsert({
       where: {
-        fecha: fechaOficial
+        fecha: fechaEjecucion
       },
       update: {
+        fechaValor: fechaValorReal,
         tasaUsdBs: usdValue,
         fuenteUrl: 'https://ve.dolarapi.com/v1/dolares/oficial'
       },
       create: {
-        fecha: fechaOficial,
+        fecha: fechaEjecucion,
+        fechaValor: fechaValorReal,
         tasaUsdBs: usdValue,
         fuenteUrl: 'https://ve.dolarapi.com/v1/dolares/oficial'
       }

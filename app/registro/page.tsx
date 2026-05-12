@@ -13,7 +13,7 @@ export default async function RegistroPage() {
 
   // Obtener Tasa BCV (Mock o desde BD)
   const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
-    orderBy: { fecha: 'desc' }
+    orderBy: { fechaValor: 'desc' }
   });
   const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 55.45; // Fallback
   // Obtener Configuración Dinámica de Costos y Banco

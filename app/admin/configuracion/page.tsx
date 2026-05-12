@@ -269,7 +269,8 @@ export default function ConfiguracionAdminPage() {
                         <table className="w-full text-sm text-left">
                             <thead className="bg-gray-50 text-gray-700 uppercase text-xs">
                                 <tr>
-                                    <th className="px-6 py-3 font-bold">Fecha</th>
+                                    <th className="px-6 py-3 font-bold">Fecha Ejecución</th>
+                                    <th className="px-6 py-3 font-bold text-brand-purple">Fecha Valor</th>
                                     <th className="px-6 py-3 font-bold">Tasa Oficial BCV</th>
                                     <th className="px-6 py-3 font-bold text-brand-purple">1 Categoría (${costos.costo_una_categoria})</th>
                                     <th className="px-6 py-3 font-bold text-brand-purple">Ambas Categorías (${costos.costo_ambas_categorias})</th>
@@ -278,18 +279,24 @@ export default function ConfiguracionAdminPage() {
                             <tbody className="divide-y divide-gray-100 text-gray-900">
                                 {historico.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-4 text-center text-gray-500 font-medium">
+                                        <td colSpan={5} className="px-6 py-4 text-center text-gray-500 font-medium">
                                             No hay registros históricos todavía.
                                         </td>
                                     </tr>
                                 ) : (
                                     historico.map((item, idx) => (
                                         <tr key={item.id || idx} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-3 whitespace-nowrap text-gray-900">
+                                            <td className="px-6 py-3 whitespace-nowrap text-gray-500">
                                                 {item.fecha ? new Date(item.fecha).toLocaleDateString('es-VE', {
                                                     day: '2-digit', month: '2-digit', year: 'numeric',
                                                     hour: '2-digit', minute: '2-digit'
                                                 }) : 'Fecha desconocida'}
+                                            </td>
+                                            <td className="px-6 py-3 whitespace-nowrap text-brand-purple font-bold">
+                                                {item.fechaValor ? new Date(item.fechaValor).toLocaleDateString('es-VE', {
+                                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                                    timeZone: 'UTC' // Importante para que no quite horas
+                                                }) : 'N/A'}
                                             </td>
                                             <td className="px-6 py-3 font-medium text-gray-900">{item.tasaUsdBs ?? 'N/A'} Bs/$</td>
                                             <td className="px-6 py-3 font-bold text-gray-900">{item.costoUnaCategoriaBs ?? 'N/A'} Bs</td>

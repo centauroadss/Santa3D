@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
 
     // Calcular monto esperado
-    const bcvRecord = await prisma.tasaBcvHistorico.findFirst({ orderBy: { fecha: 'desc' } });
+    const bcvRecord = await prisma.tasaBcvHistorico.findFirst({ orderBy: { fechaValor: 'desc' } });
     const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 55.45;
     const montoUsd = categoria === 'AMBAS' ? costoAmbasCategorias : costoUnaCategoria;
     const montoEsperadoBs = tasaBcv * montoUsd;

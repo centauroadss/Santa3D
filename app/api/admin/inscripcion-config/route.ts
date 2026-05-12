@@ -25,7 +25,7 @@ export async function GET() {
         }
         
         const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
-            orderBy: { fecha: 'desc' }
+            orderBy: { fechaValor: 'desc' }
         });
         const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 0;
         
