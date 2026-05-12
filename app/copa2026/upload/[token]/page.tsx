@@ -214,22 +214,71 @@ export default function UploadVideoPage({ params }: { params: { token: string } 
                                     </div>
                                 )}
 
-                                <div className="bg-gray-50 rounded-xl p-6 mb-8 max-w-md mx-auto text-left">
-                                    <h4 className="font-bold text-gray-900 mb-3 text-center">Siguientes Pasos</h4>
-                                    <ul className="space-y-3 text-sm text-gray-700">
-                                        <li className="flex items-start">
-                                            <span className="text-green-500 mr-2">✓</span>
-                                            Te enviamos un correo con la constancia y el reporte técnico.
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="text-[#85439a] font-bold mr-2">1.</span>
-                                            Publica el video en tu Instagram (Perfil Público).
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="text-[#85439a] font-bold mr-2">2.</span>
-                                            Menciona a <strong>@centauroads</strong> en la publicación.
-                                        </li>
-                                    </ul>
+                                {videos.length > 0 && (
+                                    <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 max-w-2xl mx-auto text-left shadow-sm">
+                                        <h4 className="font-black text-[#85439a] mb-4 text-center text-lg uppercase border-b pb-2">Resultados de Evaluación Técnica</h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-gray-50 text-gray-700 uppercase font-bold">
+                                                    <tr>
+                                                        <th className="px-4 py-3 rounded-tl-lg">Parámetro</th>
+                                                        <th className="px-4 py-3">Esperado</th>
+                                                        <th className="px-4 py-3 rounded-tr-lg">Entregado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {videos.map((v, idx) => (
+                                                        <React.Fragment key={idx}>
+                                                            <tr className="border-b">
+                                                                <td className="px-4 py-3 font-medium">Resolución</td>
+                                                                <td className="px-4 py-3 text-gray-500">1024x2048</td>
+                                                                <td className={`px-4 py-3 font-bold ${v.resolution === '1024x2048' ? 'text-green-600' : 'text-red-500'}`}>{v.resolution || 'N/A'}</td>
+                                                            </tr>
+                                                            <tr className="border-b">
+                                                                <td className="px-4 py-3 font-medium">Duración</td>
+                                                                <td className="px-4 py-3 text-gray-500">25 - 30s</td>
+                                                                <td className={`px-4 py-3 font-bold ${(v.durationSeg || 0) >= 25 && (v.durationSeg || 0) <= 31 ? 'text-green-600' : 'text-red-500'}`}>{v.durationSeg ? v.durationSeg.toFixed(1) : 0}s</td>
+                                                            </tr>
+                                                            <tr className="border-b">
+                                                                <td className="px-4 py-3 font-medium">Formato</td>
+                                                                <td className="px-4 py-3 text-gray-500">MP4</td>
+                                                                <td className={`px-4 py-3 font-bold ${v.fileType?.includes('mp4') || v.formato?.includes('mp4') ? 'text-green-600' : 'text-red-500'}`}>{v.fileType || v.formato || 'N/A'}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="px-4 py-3 font-medium rounded-bl-lg">FPS</td>
+                                                                <td className="px-4 py-3 text-gray-500 rounded-br-lg">30</td>
+                                                                <td className={`px-4 py-3 font-bold ${Math.abs((v.fps || 0) - 30) <= 1 ? 'text-green-600' : 'text-red-500'}`}>{v.fps ? v.fps.toFixed(2) : 'N/A'}</td>
+                                                            </tr>
+                                                        </React.Fragment>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bg-gray-50 rounded-xl p-6 mb-8 max-w-2xl mx-auto text-left shadow-inner border border-gray-200">
+                                    <h4 className="font-bold text-gray-900 mb-4 text-center text-lg">Siguientes Pasos (Importante)</h4>
+                                    <div className="space-y-4 text-sm text-gray-700">
+                                        <div className="flex items-start">
+                                            <div className="bg-green-100 text-green-600 rounded-full w-6 h-6 flex items-center justify-center font-bold mr-3 shrink-0">✓</div>
+                                            <p>Se ha emitido automáticamente un correo electrónico a tu bandeja con los resultados de esta evaluación técnica y la constancia de entrega.</p>
+                                        </div>
+                                        <div className="flex items-start">
+                                            <div className="bg-[#f79131] text-white rounded-full w-6 h-6 flex items-center justify-center font-bold mr-3 shrink-0">1</div>
+                                            <p>Sube este mismo video a tu cuenta pública de <strong>Instagram</strong> (como Reel o Post) y compártelo/etiqueta obligatoriamente a la cuenta <strong>@centauroads</strong>.</p>
+                                        </div>
+                                        <div className="flex items-start">
+                                            <div className="bg-[#85439a] text-white rounded-full w-6 h-6 flex items-center justify-center font-bold mr-3 shrink-0">2</div>
+                                            <div>
+                                                <p className="mb-2">Invita a tus conocidos y seguidores a que voten por tu video utilizando el siguiente enlace directo de votación:</p>
+                                                <div className="bg-white border border-gray-300 p-2 rounded flex items-center justify-between">
+                                                    <code className="text-[#85439a] font-bold select-all truncate mr-2">https://copa2026.centauroads.com/votar/{token}</code>
+                                                    <button onClick={() => navigator.clipboard.writeText(`https://copa2026.centauroads.com/votar/${token}`)} className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-gray-700 transition">Copiar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <button 

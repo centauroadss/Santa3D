@@ -8,7 +8,8 @@ export async function sendEmail2VideoRecibido(
     nombre: string, 
     apellido: string, 
     categoria: string, 
-    videosInfo: any[]
+    videosInfo: any[],
+    tokenVideo: string = ''
 ) {
     try {
         const configAdjunto = await prisma.configConcurso.findUnique({
@@ -95,9 +96,12 @@ export async function sendEmail2VideoRecibido(
             <p style="font-size: 12px; color: #666;">* Hemos adjuntado una copia de tu video a este correo como respaldo (si pesa menos de 35MB).</p>
 
             <div style="background: #eef2ff; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                <h3 style="margin-top:0; color: #4f46e5;">🚀 Siguientes Pasos</h3>
-                <p><strong>1️⃣ Publícalo en Instagram</strong><br>Sube tu video (Reel/Post) y menciona a @centauroads. ¡Tu perfil debe ser público!</p>
-                <p><strong>2️⃣ Consigue Likes ❤️</strong><br>Comparte tu publicación. Los videos más votados pasarán a la ronda final.</p>
+                <h3 style="margin-top:0; color: #4f46e5;">🚀 Siguientes Pasos Obligatorios</h3>
+                <p><strong>1️⃣ Sube tu video a Instagram</strong><br>Publica el video en tu cuenta de Instagram (debe ser pública) y compártelo/menciona obligatoriamente a la cuenta <strong>@centauroads</strong>.</p>
+                <p><strong>2️⃣ Invita a tus conocidos a Votar</strong><br>Comparte el siguiente enlace directo con tus amigos y familiares para que apoyen tu video con sus votos:</p>
+                <div style="background: #ffffff; padding: 10px; border: 1px dashed #4f46e5; border-radius: 4px; text-align: center; margin: 10px 0;">
+                    <a href="https://copa2026.centauroads.com/votar/${tokenVideo}" style="color: #4f46e5; font-weight: bold; text-decoration: none; word-break: break-all;">https://copa2026.centauroads.com/votar/${tokenVideo}</a>
+                </div>
             </div>
         </div>
         `;

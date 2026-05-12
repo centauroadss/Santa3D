@@ -86,7 +86,8 @@ export async function POST(req: Request) {
             inscripcion.nombre,
             inscripcion.apellido,
             inscripcion.categoria,
-            videosInfoParaEmail
+            videosInfoParaEmail,
+            inscripcion.tokenVideo
         );
 
         return NextResponse.json({ success: true, warnings: videosInfoParaEmail.map(v => v.warnings).flat() });
