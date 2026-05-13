@@ -80,6 +80,8 @@ export async function GET(request: NextRequest) {
         createdAt: insc.createdAt.toISOString(),
         fotoPerfilUrl: fotoPerfilUrl,
         comprobanteUrl: comprobanteUrl,
+        ocrData: insc.pago?.ocrResultadoRaw || null,
+        referencia: insc.pago?.referencia || '-',
         videos: formattedVideos
       };
     }));

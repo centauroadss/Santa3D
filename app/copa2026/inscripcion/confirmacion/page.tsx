@@ -8,6 +8,7 @@ import axios from 'axios';
 export default function ConfirmacionInscripcionPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
+  const [conformidad, setConformidad] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<'idle' | 'success' | 'error' | 'cooldown'>('idle');
   const [timeLeft, setTimeLeft] = useState(0);
@@ -16,6 +17,9 @@ export default function ConfirmacionInscripcionPage() {
     // Para propósitos de desarrollo/UI mock, usamos un email dummy o podemos buscarlo en localStorage si el wizard lo guarda.
     const savedEmail = sessionStorage.getItem('copa2026_registered_email') || 'participante@email.com';
     setEmail(savedEmail);
+
+    const savedConformidad = sessionStorage.getItem('copa2026_conformidad_mensaje');
+    if (savedConformidad) setConformidad(savedConformidad);
 
     const lastResend = sessionStorage.getItem('copa2026_last_resend');
     if (lastResend) {
@@ -87,6 +91,14 @@ export default function ConfirmacionInscripcionPage() {
           <p className="text-gray-300 text-lg mb-4 text-center">
             Tu pago ha sido validado correctamente.
           </p>
+          {conformidad && (
+            <div className="bg-green-900/30 border border-green-500/30 rounded-xl p-4 mb-6 flex items-center justify-center gap-3">
+              <CheckCircle2 size={24} className="text-green-500 shrink-0" />
+              <p className="text-green-400 font-medium text-sm text-center">
+                {conformidad}
+              </p>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <Mail className="text-brand-purple shrink-0 mt-1" size={20} />

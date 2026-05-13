@@ -19,6 +19,8 @@ const s3Client = new S3Client({
   region: REGION,
   endpoint: cleanEndpoint,
   forcePathStyle: false, // LOGIC: Use Virtual Host style to match DO SFO3 requirements
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',

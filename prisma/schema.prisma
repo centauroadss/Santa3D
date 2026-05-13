@@ -311,13 +311,13 @@ model Voto {
 }
 
 model TasaBcvHistorico {
-  id         Int       @id @default(autoincrement())
-  fecha      DateTime  @unique @db.Date
-  fechaValor DateTime? @db.Date
-  tasaUsdBs  Decimal   @db.Decimal(10, 4)
-  fuenteUrl  String?   @db.VarChar(255)
-  createdAt  DateTime  @default(now())
+  id             Int      @id @default(autoincrement())
+  fechaValor     DateTime @unique
+  tasaUsdBs      Decimal  @db.Decimal(18, 8)
+  fechaEjecucion DateTime @default(now())
+  fuenteUrl      String?  @db.VarChar(255)
 
+  @@index([fechaValor])
   @@map("tasa_bcv_historico")
 }
 

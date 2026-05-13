@@ -90,31 +90,58 @@ export async function POST(req: Request) {
     // Obtener costos de DB
     const configs = await prisma.configConcurso.findMany({
       where: {
-        clave: { in: ['costo_una_categoria', 'costo_ambas_categorias'] }
+        clave: { in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono'] }
       }
     });
     const configMap = configs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
     const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
     const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
 
-    // Calcular monto esperado
-    const bcvRecord = await prisma.tasaBcvHistorico.findFirst({ orderBy: { fechaValor: 'desc' } });
-    const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 55.45;
+    const configPago = {
+      banco: configMap['pago_banco'] || 'Banesco',
+      cedula: configMap['pago_cedula'] || 'J-123456789',
+      telefono: configMap['pago_telefono'] || '04140000000'
+    };
+
+    // Calculamos el costo base en USD para enviarlo al OCR
+    // (El OCR calculará el Monto Esperado Bs dinámicamente según la fecha extraída)
     const montoUsd = categoria === 'AMBAS' ? costoAmbasCategorias : costoUnaCategoria;
-    const montoEsperadoBs = tasaBcv * montoUsd;
 
     const base64Image = bufferComprobante.toString('base64');
 
     // 1. OCR Validación
-    const ocrResult = await validarComprobanteOcr(base64Image, montoEsperadoBs, referencia, nombre, apellido, cedulaIdentidad);
+    const ocrResult = await validarComprobanteOcr(base64Image, montoUsd, referencia, nombre, apellido, cedulaIdentidad, configPago);
     
     // Si OCR falla por monto u otro motivo
     if (!ocrResult.isValid) {
+      const fallbackMonto = ocrResult.rawJson?.montoEsperadoCalculado ? ocrResult.rawJson.montoEsperadoCalculado.toFixed(2) : "mínimo";
       return NextResponse.json({ 
-        error: `Error de Validación: ${ocrResult.rawJson?.error || `El OCR no pudo validar el monto de ${montoEsperadoBs.toFixed(2)} Bs o el concepto en la imagen.`} Por favor, verifica y vuelve a intentarlo.`
+        error: `Error de Validación: ${ocrResult.rawJson?.error || `El OCR no pudo validar el monto de ${fallbackMonto} Bs o el concepto en la imagen.`} Por favor, verifica y vuelve a intentarlo.`
       }, { status: 400 });
     }
     
+    // Incorporar el mensaje de conformidad si los 3 campos de receptor son válidos
+    const conformidad = ocrResult.bancoReceptorOk && ocrResult.cedulaReceptorOk && ocrResult.telefonoReceptorOk;
+    if (conformidad) {
+        ocrResult.rawJson.conformidad = "✅ Validación Conformidad: Banco, Cédula y Teléfono del receptor verificados.";
+    }
+    if (ocrResult.conceptoExtraido) {
+        ocrResult.rawJson.conceptoExtraido = ocrResult.conceptoExtraido;
+    }
+    if (ocrResult.fechaExtraida) {
+        ocrResult.rawJson.fechaExtraida = ocrResult.fechaExtraida;
+    }
+
+    let parsedFechaPago: Date | null = null;
+    if (ocrResult.fechaExtraida) {
+      const parts = ocrResult.fechaExtraida.split(/[-/]/);
+      if (parts.length === 3) {
+         let [day, month, year] = parts;
+         if (year.length === 2) year = `20${year}`;
+         parsedFechaPago = new Date(parseInt(year), parseInt(month)-1, parseInt(day));
+      }
+    }
+
     // Aquí implementamos la evaluación blanda del Concepto
     // No bloqueamos, pero se podría registrar un warning si es necesario. (OCR extrae rawJson)
 
@@ -166,6 +193,7 @@ export async function POST(req: Request) {
             montoCapturadoBs: ocrResult.montoDetectado || montoEsperadoBs,
             montoEsperadoBs,
             tasaBcvUsada: tasaBcv,
+            fechaPagoExtractada: parsedFechaPago,
             comprobantePath: savedComprobantePath,
             fileHash,
             ocrResultadoRaw: ocrResult.rawJson,
@@ -250,7 +278,11 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, inscripcionId: inscripcion.id });
+    return NextResponse.json({ 
+      success: true, 
+      inscripcionId: inscripcion.id,
+      conformidadMensaje: ocrResult.rawJson.conformidad || null
+    });
 
   } catch (error: any) {
     console.error('Error en endpoint inscripcion:', error);

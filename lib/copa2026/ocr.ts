@@ -1,4 +1,15 @@
 import Tesseract from 'tesseract.js';
+import { prisma } from '@/lib/prisma';
+import { DateTime } from 'luxon';
+
+const TZ = 'America/Caracas';
+
+export function toCaracasDate(d: Date | string): Date {
+  return DateTime.fromJSDate(new Date(d), { zone: 'utc' })
+                 .setZone(TZ)
+                 .startOf('day')
+                 .toJSDate();
+}
 
 interface OcrResult {
   isValid: boolean;
@@ -7,15 +18,21 @@ interface OcrResult {
   bancoDetectado: string | null;
   rawJson: any;
   confidence: number;
+  fechaExtraida?: string | null;
+  conceptoExtraido?: string | null;
+  bancoReceptorOk?: boolean;
+  cedulaReceptorOk?: boolean;
+  telefonoReceptorOk?: boolean;
 }
 
 export async function validarComprobanteOcr(
   base64Image: string, 
-  montoEsperado: number, 
+  costoUsd: number, 
   referenciaEsperada: string,
   nombre: string,
   apellido: string,
-  cedula: string
+  cedula: string,
+  configPago?: { banco: string, cedula: string, telefono: string }
 ): Promise<OcrResult> {
   try {
     // Limpiar header base64 si existe
@@ -40,7 +57,7 @@ export async function validarComprobanteOcr(
     const { data: { text, confidence } } = result;
 
     // Extraer candidatos monetarios usando RegEx
-    const regex = /(?:\b|Bs\.?\s*|Monto:\s*|Monto\s*|BsS\s*)([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})?)\b/gi;
+    const regex = /(?:\b|Bs\.?\s*|Monto:\s*|Monto\s*|BsS\s*)((?:[0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]+)(?:[.,][0-9]{1,2})?)\b/gi;
     const matches = [...text.matchAll(regex)];
     const candidatos = [];
 
@@ -64,11 +81,7 @@ export async function validarComprobanteOcr(
         }
     }
 
-    const margen = 5.0; // 5 Bs de tolerancia
-    const candidatoIdeal = candidatos.find(c => c >= montoEsperado - margen && c <= montoEsperado + margen);
-
     // Búsqueda de referencia
-    // Buscamos al menos los últimos 4 dígitos de la referencia para mayor flexibilidad ante lectura parcial
     const refLimpia = referenciaEsperada.replace(/\D/g, '');
     const refFragment = refLimpia.length > 4 ? refLimpia.slice(-4) : refLimpia;
     const referenciaEncontrada = refFragment.length > 0 && text.includes(refFragment);
@@ -76,6 +89,98 @@ export async function validarComprobanteOcr(
     // Búsqueda de concepto/cédula en el texto raw como método auxiliar
     const cedulaRaw = cedula.replace(/[^0-9]/g, '');
     const cedulaEncontrada = cedulaRaw.length > 0 && text.includes(cedulaRaw);
+
+    // Extracción de Fecha (formatos dd/mm/yyyy o dd-mm-yyyy)
+    let fechaExtraida: string | null = null;
+    const dateRegex = /\b(0[1-9]|[12][0-9]|3[01])[-/](0[1-9]|1[012])[-/](\d{4}|\d{2})\b/g;
+    const dateMatch = text.match(dateRegex);
+    if (dateMatch && dateMatch.length > 0) {
+        fechaExtraida = dateMatch[0];
+    }
+
+    // Calcular Fecha de Pago Real (O fecha actual si falla)
+    let fechaPagoRaw: Date | null = null;
+    if (fechaExtraida) {
+        const parts = fechaExtraida.split(/[-/]/);
+        if (parts.length === 3) {
+            let [day, month, year] = parts;
+            if (year.length === 2) year = `20${year}`;
+            // Crear el objeto DateTime directamente en la zona de Caracas
+            fechaPagoRaw = DateTime.fromObject(
+                { year: parseInt(year), month: parseInt(month), day: parseInt(day) },
+                { zone: TZ }
+            ).toJSDate();
+        }
+    }
+
+    // Si no se extrajo fecha o falló, usamos la fecha de hoy
+    const fechaPago = fechaPagoRaw ? toCaracasDate(fechaPagoRaw) : toCaracasDate(new Date());
+
+    // Buscar Tasa BCV Vigente para esa fecha exacta (o anterior más cercana)
+    const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
+        where: { fechaValor: { lte: fechaPago } },
+        orderBy: { fechaValor: 'desc' }
+    });
+    
+    if (!bcvRecord) {
+        return {
+            isValid: false,
+            montoDetectado: null,
+            referenciaDetectada: null,
+            bancoDetectado: null,
+            rawJson: { 
+                error: 'Sin tasa BCV histórica aplicable para validar el pago',
+                tasaUsada: null,
+                fechaValorTasa: null,
+                fechaPagoNormalizada: fechaPago,
+                montoEsperadoCalculado: null
+            },
+            confidence: confidence
+        };
+    }
+
+    const tasaBcv = parseFloat(bcvRecord.tasaUsdBs.toString());
+    const montoEsperadoBs = tasaBcv * costoUsd;
+
+    const margen = 5.0; // 5 Bs de tolerancia
+    // Aceptamos montos iguales o mayores al esperado. Tomamos el menor de los candidatos válidos para evitar agarrar números de referencia gigantes.
+    const candidatoIdeal = candidatos.filter(c => c >= montoEsperadoBs - margen).sort((a, b) => a - b)[0];
+
+    // Extracción de Concepto
+    let conceptoExtraido: string | null = null;
+    const conceptoRegex = /(?:concepto|descripción|nota|motivo|detalle|asunto)s?:?\s*([^\n\r]+)/i;
+    const conceptoMatch = text.match(conceptoRegex);
+    if (conceptoMatch && conceptoMatch[1]) {
+        conceptoExtraido = conceptoMatch[1].trim();
+    }
+
+    // Validación Receptor (Banco, Cedula, Telefono)
+    let bancoReceptorOk = false;
+    let cedulaReceptorOk = false;
+    let telefonoReceptorOk = false;
+
+    if (configPago) {
+        const textLower = text.toLowerCase();
+        
+        // Validar Banco
+        const bReceptor = configPago.banco.toLowerCase();
+        if (textLower.includes(bReceptor) || bReceptor.split(' ').some(word => word.length > 3 && textLower.includes(word))) {
+            bancoReceptorOk = true;
+        }
+
+        // Validar Cedula Receptor
+        const ciConfigRaw = configPago.cedula.replace(/[^0-9]/g, '');
+        if (ciConfigRaw.length > 0 && text.includes(ciConfigRaw)) {
+            cedulaReceptorOk = true;
+        }
+
+        // Validar Telefono Receptor
+        const tlfConfigRaw = configPago.telefono.replace(/[^0-9]/g, '');
+        const tlfFragment = tlfConfigRaw.length > 7 ? tlfConfigRaw.slice(-7) : tlfConfigRaw;
+        if (tlfFragment.length > 0 && text.replace(/\s+/g, '').includes(tlfFragment)) {
+            telefonoReceptorOk = true;
+        }
+    }
 
     // Lógica de aceptación ESTRICTA (Solicitado por el auditor):
     // El OCR debe encontrar el monto ideal, O la referencia/cédula.
@@ -85,13 +190,22 @@ export async function validarComprobanteOcr(
             isValid: true,
             montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
             referenciaDetectada: referenciaEncontrada ? referenciaEsperada : null,
-            bancoDetectado: null,
+            bancoDetectado: bancoReceptorOk ? configPago?.banco || null : null,
             rawJson: { 
                 mensaje: "Aprobado por Tesseract local", 
                 candidatos, 
-                text_extracted: text 
+                text_extracted: text,
+                tasaUsada: tasaBcv,
+                fechaValorTasa: bcvRecord.fechaValor,
+                fechaPagoNormalizada: fechaPago,
+                montoEsperadoCalculado: montoEsperadoBs
             },
-            confidence: confidence
+            confidence: confidence,
+            fechaExtraida,
+            conceptoExtraido,
+            bancoReceptorOk,
+            cedulaReceptorOk,
+            telefonoReceptorOk
         };
     }
 
@@ -101,11 +215,20 @@ export async function validarComprobanteOcr(
         referenciaDetectada: null,
         bancoDetectado: null,
         rawJson: { 
-            error: `El OCR no pudo detectar el monto exacto de ${montoEsperado} Bs, ni la referencia. Sube una imagen más clara.`,
+            error: `El OCR no pudo detectar el monto mínimo de ${montoEsperadoBs.toFixed(2)} Bs (Tasa: ${tasaBcv.toFixed(2)}), ni la referencia. Sube una imagen más clara.`,
             candidatos,
-            text_extracted: text
+            text_extracted: text,
+            tasaUsada: tasaBcv,
+            fechaValorTasa: bcvRecord.fechaValor,
+            fechaPagoNormalizada: fechaPago,
+            montoEsperadoCalculado: montoEsperadoBs
         },
-        confidence: confidence
+        confidence: confidence,
+        fechaExtraida,
+        conceptoExtraido,
+        bancoReceptorOk,
+        cedulaReceptorOk,
+        telefonoReceptorOk
     };
 
   } catch (error: any) {

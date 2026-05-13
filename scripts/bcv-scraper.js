@@ -25,35 +25,47 @@ async function main() {
         
         const html = await response.text();
         
-        // Extraer el valor usando regex ya que no tenemos cheerio.
-        // El HTML es típicamente: <div id="dolar">...<strong> 36,1234 </strong>...</div>
-        const match = html.match(/id="dolar".*?<strong>\s*([\d,]+)\s*<\/strong>/is);
+        // La clase del strong puede variar, así que usamos [^>]* para capturar cualquier atributo extra
+        const match = html.match(/id="dolar".*?<strong[^>]*>\s*([\d,]+)\s*<\/strong>/is);
         if (!match || !match[1]) {
             throw new Error('No se pudo encontrar el valor del dólar en el HTML');
         }
         
         const usdText = match[1].trim();
-        // El BCV usa coma para decimales (ej. 36,1234)
         const usdValue = parseFloat(usdText.replace(',', '.'));
         
         if (isNaN(usdValue)) {
             throw new Error(`El valor extraído no es un número válido: ${usdText}`);
         }
 
-        console.log(`[BCV Scraper] Tasa USD extraída: ${usdValue}`);
+        // Extraer la fecha valor real desde el atributo content de dc:date
+        const matchDate = html.match(/Fecha Valor:.*?content="([^"]+)"/is);
+        let fechaValor = new Date();
+        if (matchDate && matchDate[1]) {
+            fechaValor = new Date(matchDate[1]);
+        } else {
+            console.warn('[BCV Scraper] No se pudo extraer la Fecha Valor del HTML, usando fecha actual + 1.');
+            fechaValor.setHours(0, 0, 0, 0);
+            fechaValor.setDate(fechaValor.getDate() + 1);
+        }
 
-        // Usamos el inicio del día (medianoche) local como fecha
+        console.log(`[BCV Scraper] Tasa USD extraída: ${usdValue}`);
+        console.log(`[BCV Scraper] Fecha Valor extraída: ${fechaValor.toISOString()}`);
+
+        // Usamos el inicio del día (medianoche) local como fecha de ejecución
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
 
         const record = await prisma.tasaBcvHistorico.upsert({
             where: { fecha: hoy },
             update: {
+                fechaValor: fechaValor,
                 tasaUsdBs: usdValue,
                 fuenteUrl: 'https://www.bcv.org.ve/'
             },
             create: {
                 fecha: hoy,
+                fechaValor: fechaValor,
                 tasaUsdBs: usdValue,
                 fuenteUrl: 'https://www.bcv.org.ve/'
             }

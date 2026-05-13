@@ -65,15 +65,23 @@ export async function getTasaDelDia(): Promise<number> {
                 if (res2.ok) {
                     const data = await res2.json();
                     if (data && data.contents) {
-                        const match = data.contents.match(/<div id="dolar">[\s\S]*?<strong>(.*?)<\/strong>/i);
+                        const match = data.contents.match(/<div id="dolar">[\s\S]*?<strong[^>]*>(.*?)<\/strong>/i);
                         if (match && match[1]) {
                             const valStr = match[1].trim().replace(',', '.');
                             const parsedVal = parseFloat(valStr);
                             if (!isNaN(parsedVal)) {
                                 usdValue = parsedVal;
                                 fuenteUrl = 'https://www.bcv.org.ve (vía proxy)';
-                                fechaVigencia = new Date(Date.UTC(hoyCaracas.getFullYear(), hoyCaracas.getMonth(), hoyCaracas.getDate() + 1, 0, 0, 0)); // Asumimos día hábil siguiente
-                                console.log(`[BCV API] Obtenido exitosamente mediante Scraping Proxy: ${usdValue}`);
+                                
+                                const matchDate = data.contents.match(/Fecha Valor:.*?content="([^"]+)"/is);
+                                if (matchDate && matchDate[1]) {
+                                    fechaVigencia = new Date(matchDate[1]);
+                                } else {
+                                    console.warn('[BCV API] No se pudo extraer la Fecha Valor del HTML, usando fecha actual + 1.');
+                                    fechaVigencia = new Date(Date.UTC(hoyCaracas.getFullYear(), hoyCaracas.getMonth(), hoyCaracas.getDate() + 1, 0, 0, 0)); // Asumimos día hábil siguiente
+                                }
+                                
+                                console.log(`[BCV API] Obtenido exitosamente mediante Scraping Proxy: ${usdValue}. Fecha Vigencia: ${fechaVigencia.toISOString()}`);
                             }
                         }
                     }
