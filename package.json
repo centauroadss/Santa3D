@@ -79,6 +79,6 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   }
 }
