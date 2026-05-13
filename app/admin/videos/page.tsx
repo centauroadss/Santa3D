@@ -35,6 +35,8 @@ interface InscripcionData {
     createdAt: string;
     fotoPerfilUrl: string | null;
     comprobanteUrl: string | null;
+    ocrData: any;
+    referencia: string;
     videos: VideoData[];
 }
 
@@ -266,53 +268,82 @@ export default function AdminInscripcionesPage() {
                                         {safeFormatDate(insc.createdAt)}
                                     </td>
                                     <td className="px-4 py-3 align-top pt-4">
-                                        <div className="font-bold text-gray-900 leading-tight flex items-center gap-2">
-                                            {insc.participantName}
-                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider ${insc.categoria === 'RENDER' ? 'bg-red-100 text-red-700' : insc.categoria === 'IA' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
-                                                {insc.categoria}
-                                            </span>
-                                        </div>
-                                        <div className="text-[10px] text-gray-500 font-mono mt-1">C.I: {insc.cedulaIdentidad}</div>
-                                        {insc.fechaNacimiento && (
-                                            <div className="text-[10px] text-gray-500 font-mono">Nac: {new Date(insc.fechaNacimiento).toLocaleDateString()} ({insc.edad} años)</div>
-                                        )}
-                                        <div className="text-[10px] text-brand-purple font-mono font-bold">{insc.instagram}</div>
-                                        <div className="text-[10px] text-gray-400 font-mono mt-1">{insc.email}</div>
-                                        <div className="text-[10px] text-gray-400 font-mono">{insc.telefono}</div>
-                                        <div className="mt-1">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${insc.estatusInscripcion === 'COMPLETADO' ? 'bg-green-100 text-green-700' :
-                                                insc.estatusInscripcion === 'RECHAZADO' ? 'bg-red-100 text-red-700' :
-                                                    'bg-blue-100 text-blue-700'
-                                                }`}>
-                                                {insc.estatusInscripcion}
-                                            </span>
+                                        <div className="flex gap-3">
+                                            {insc.fotoPerfilUrl ? (
+                                                <img 
+                                                    src={insc.fotoPerfilUrl} 
+                                                    alt={insc.participantName} 
+                                                    className="w-10 h-10 rounded-full object-cover shadow-sm flex-shrink-0 cursor-pointer border border-gray-200"
+                                                    onClick={() => setPlayingImage(insc.fotoPerfilUrl!)}
+                                                    title="Ver Foto de Perfil"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-gray-400">
+                                                    <UserCircle size={24} />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="font-bold text-gray-900 leading-tight flex items-center gap-2">
+                                                    {insc.participantName}
+                                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider ${insc.categoria === 'RENDER' ? 'bg-red-100 text-red-700' : insc.categoria === 'IA' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
+                                                        {insc.categoria}
+                                                    </span>
+                                                </div>
+                                                <div className="text-[10px] text-gray-500 font-mono mt-1">C.I: {insc.cedulaIdentidad}</div>
+                                                {insc.fechaNacimiento && (
+                                                    <div className="text-[10px] text-gray-500 font-mono">Nac: {new Date(insc.fechaNacimiento).toLocaleDateString()} ({insc.edad} años)</div>
+                                                )}
+                                                <div className="text-[10px] text-brand-purple font-mono font-bold">{insc.instagram}</div>
+                                                <div className="text-[10px] text-gray-400 font-mono mt-1">{insc.email}</div>
+                                                <div className="text-[10px] text-gray-400 font-mono">{insc.telefono}</div>
+                                                <div className="mt-1">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${insc.estatusInscripcion === 'COMPLETADO' ? 'bg-green-100 text-green-700' :
+                                                        insc.estatusInscripcion === 'RECHAZADO' ? 'bg-red-100 text-red-700' :
+                                                            'bg-blue-100 text-blue-700'
+                                                        }`}>
+                                                        {insc.estatusInscripcion}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center align-top pt-4">
-                                        <div className="flex gap-2 justify-center">
-                                            {insc.fotoPerfilUrl ? (
-                                                <button
-                                                    onClick={() => setPlayingImage(insc.fotoPerfilUrl)}
-                                                    className="w-8 h-8 bg-black/5 hover:bg-brand-purple hover:text-white text-brand-purple rounded flex items-center justify-center transition-all group"
-                                                    title="Ver Foto de Perfil"
-                                                >
-                                                    <UserCircle size={16} />
-                                                </button>
-                                            ) : (
-                                                <div className="w-8 h-8 flex items-center justify-center text-gray-300" title="Sin foto"><UserCircle size={16} /></div>
-                                            )}
-
+                                        <div className="flex gap-2 justify-center mb-2">
                                             {insc.comprobanteUrl ? (
                                                 <button
-                                                    onClick={() => setPlayingImage(insc.comprobanteUrl)}
-                                                    className="w-8 h-8 bg-black/5 hover:bg-green-600 hover:text-white text-green-600 rounded flex items-center justify-center transition-all group"
+                                                    onClick={() => setPlayingImage(insc.comprobanteUrl!)}
+                                                    className="w-full bg-black/5 hover:bg-green-600 hover:text-white text-green-600 rounded flex items-center justify-center transition-all group py-1 text-xs font-bold"
                                                     title="Ver Comprobante de Pago"
                                                 >
-                                                    <Receipt size={16} />
+                                                    <Receipt size={14} className="mr-1" /> Ver Comprobante
                                                 </button>
                                             ) : (
-                                                <div className="w-8 h-8 flex items-center justify-center text-gray-300" title="Sin pago"><Receipt size={16} /></div>
+                                                <div className="w-full bg-gray-100 py-1 flex items-center justify-center text-gray-400 rounded text-xs" title="Sin pago"><Receipt size={14} className="mr-1"/> Sin Pago</div>
                                             )}
+                                        </div>
+                                        <div className="mt-2 text-[10px] bg-gray-50 p-2 rounded border border-gray-100 text-left w-full max-w-[180px] mx-auto">
+                                            <div className="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">Datos de Captura</div>
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.referencia}>
+                                                <span className="font-bold text-gray-400 mr-1">Ref:</span>{insc.referencia || 'N/D'}
+                                            </div>
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.bancoDetectado || 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Banco:</span>{insc.ocrData?.bancoDetectado || 'N/D'}
+                                            </div>
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.montoDetectado ? `${insc.ocrData.montoDetectado} Bs` : 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Monto:</span>{insc.ocrData?.montoDetectado ? `${insc.ocrData.montoDetectado} Bs` : 'N/D'}
+                                            </div>
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.conceptoExtraido || 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Conc:</span>{insc.ocrData?.conceptoExtraido || 'N/D'}
+                                            </div>
+                                            {insc.ocrData?.conformidad ? (
+                                                <div className="mt-2 text-green-700 font-bold bg-green-100 p-1 rounded text-center" title={insc.ocrData.conformidad}>
+                                                    ✅ Conformidad
+                                                </div>
+                                            ) : insc.ocrData ? (
+                                                <div className="mt-2 text-red-600 font-bold bg-red-100 p-1 rounded text-center" title="Banco, Cédula o Teléfono del receptor no coinciden con la Configuración Global">
+                                                    ⚠️ No Conformidad
+                                                </div>
+                                            ) : null}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 align-top">
