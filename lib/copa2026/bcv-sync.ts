@@ -40,14 +40,18 @@ export async function syncBcv(): Promise<{ fechaValor: Date; tasa: number; nuevo
   const fechaValor = parseFechaValor(html).toJSDate();
   const tasa = parseTasaUsd(html);
 
+  // Fecha Ejecucion = "Hoy" (cuando corre el scraper, típicamente la tarde del día anterior a la fecha valor)
+  const fechaEjecucion = new Date();
+  fechaEjecucion.setUTCHours(0, 0, 0, 0);
+
   const existente = await prisma.tasaBcvHistorico.findUnique({
-    where: { fechaValor }
+    where: { fecha: fechaEjecucion }
   });
 
   await prisma.tasaBcvHistorico.upsert({
-    where: { fechaValor },
-    update: { tasaUsdBs: tasa, fechaEjecucion: new Date() },
-    create: { fechaValor, tasaUsdBs: tasa, fechaEjecucion: new Date(), fuenteUrl: BCV_URL }
+    where: { fecha: fechaEjecucion },
+    update: { tasaUsdBs: tasa, fechaValor, fechaEjecucion: new Date() },
+    create: { fecha: fechaEjecucion, fechaValor, tasaUsdBs: tasa, fechaEjecucion: new Date(), fuenteUrl: BCV_URL }
   });
 
   return { fechaValor, tasa, nuevo: !existente };

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
         const historico = await prisma.tasaBcvHistorico.findMany({
             orderBy: {
-                fechaValor: 'desc'
+                fecha: 'desc'
             },
             take: 30 // Traer los últimos 30 días
         });
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
             const tasa = parseFloat(h.tasaUsdBs.toString());
             return {
                 id: h.id,
-                fecha: h.fechaEjecucion,
+                fecha: h.fecha,
                 fechaEjecucion: h.fechaEjecucion,
                 fechaValor: h.fechaValor,
                 tasaUsdBs: tasa.toFixed(4),

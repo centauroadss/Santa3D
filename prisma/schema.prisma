@@ -312,7 +312,8 @@ model Voto {
 
 model TasaBcvHistorico {
   id             Int      @id @default(autoincrement())
-  fechaValor     DateTime @unique
+  fecha          DateTime @unique @db.Date
+  fechaValor     DateTime @db.Date
   tasaUsdBs      Decimal  @db.Decimal(18, 8)
   fechaEjecucion DateTime @default(now())
   fuenteUrl      String?  @db.VarChar(255)
