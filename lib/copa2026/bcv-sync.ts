@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon';
 import { prisma } from '@/lib/prisma';
+import axios from 'axios';
+import https from 'https';
 
 const TZ = 'America/Caracas';
 const BCV_URL = 'https://www.bcv.org.ve/';
@@ -33,9 +35,21 @@ export function parseTasaUsd(html: string): number {
 }
 
 export async function syncBcv(): Promise<{ fechaValor: Date; tasa: number; nuevo: boolean }> {
-  const res = await fetch(BCV_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`BCV: HTTP ${res.status}`);
-  const html = await res.text();
+  const agent = new https.Agent({
+    rejectUnauthorized: false
+  });
+
+  const res = await axios.get(BCV_URL, {
+    httpsAgent: agent,
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
+
+  if (res.status !== 200) throw new Error(`BCV: HTTP ${res.status}`);
+  const html = res.data;
 
   const fechaValor = parseFechaValor(html).toJSDate();
   const tasa = parseTasaUsd(html);
