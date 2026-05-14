@@ -44,8 +44,7 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-
-# We don't need to copy prisma schema or generate client again since 
+COPY --from=builder /app/prisma ./prisma
 # standalone output includes the necessary files
 
 # USER nextjs
@@ -58,4 +57,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Note: EasyPanel handles the environment variables injection at runtime
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node server.js"]
