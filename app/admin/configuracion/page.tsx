@@ -289,7 +289,7 @@ export default function ConfiguracionAdminPage() {
                                             <td className="px-6 py-3 whitespace-nowrap text-gray-500">
                                                 {item.fecha ? new Date(item.fecha).toLocaleDateString('es-VE', {
                                                     day: '2-digit', month: '2-digit', year: 'numeric',
-                                                    hour: '2-digit', minute: '2-digit'
+                                                    timeZone: 'UTC'
                                                 }) : 'Fecha desconocida'}
                                             </td>
                                             <td className="px-6 py-3 whitespace-nowrap text-brand-purple font-bold">
