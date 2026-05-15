@@ -78,8 +78,9 @@ export async function POST(request: NextRequest) {
         const result = await syncBcv();
 
         // Get the updated/created record to return to the frontend
-        const record = await prisma.tasaBcvHistorico.findUnique({
-            where: { fechaValor: result.fechaValor }
+        const record = await prisma.tasaBcvHistorico.findFirst({
+            where: { fechaValor: result.fechaValor },
+            orderBy: { fechaEjecucion: 'desc' }
         });
 
         return NextResponse.json({ success: true, data: record }, {
