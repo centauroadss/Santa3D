@@ -280,12 +280,12 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
                 onClick={() => setCategoria(cat)}
                 className={`py-4 rounded-xl font-bold uppercase transition-all border ${
                   categoria === cat 
-                    ? 'bg-brand-purple text-white border-brand-purple shadow-[0_0_15px_rgba(139,92,246,0.3)]' 
+                    ? 'bg-brand-purple text-white border-brand-purple shadow-lg shadow-brand-purple/20' 
                     : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30'
                 }`}
                 data-testid={`btn-categoria-${cat}`}
               >
-                {cat} {cat === 'AMBAS' ? '(USD 10)' : '(USD 5)'}
+                {cat}
               </button>
             ))}
           </div>
@@ -294,18 +294,37 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
       </div>
 
       {/* Foto de perfil */}
-      <div>
-        <label className="block text-sm font-bold mb-1">
-          Fotografía del participante (rostro visible)
+      <div className={!fotoPerfilFile ? "p-4 bg-red-500/5 rounded-2xl border border-red-500/20" : "p-4"}>
+        <label className="block text-sm font-bold text-gray-300 mb-2">Foto de Perfil (Solo rostros) *Requerido</label>
+        <p className="text-xs text-gray-400 mb-3">La imagen debe mostrar claramente tu rostro humano (una sola persona). No paisajes, no animales.</p>
+        <label 
+          className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+            fotoPerfilFile ? 'border-green-500 bg-green-500/5' : 'border-red-500/50 hover:border-brand-purple bg-[#111]'
+          }`}
+        >
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={(e) => setFoto(e.target.files?.[0] ?? null)} 
+            data-testid="input-fotoPerfil"
+          />
+          {fotoPerfilFile ? (
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-black font-bold">✓</div>
+              <p className="text-white font-bold">{fotoPerfilFile.name}</p>
+              <p className="text-green-500 text-sm">Foto adjunta correctamente</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-red-400 text-3xl">📁</div>
+              <p className="text-red-300 font-medium">DEBES ADJUNTAR TU FOTO DE PERFIL AQUÍ</p>
+              <p className="text-gray-500 text-sm">Haz clic. JPEG o PNG hasta 5MB</p>
+            </div>
+          )}
         </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
-          data-testid="input-fotoPerfil"
-        />
         {errors.fotoPerfilFile && (
-          <p className="text-xs text-red-500 mt-1">{errors.fotoPerfilFile}</p>
+          <p className="text-xs text-red-500 mt-2 font-bold">{errors.fotoPerfilFile}</p>
         )}
       </div>
 
@@ -370,18 +389,20 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
       </div>
 
       {/* Botón Siguiente */}
-      <button
-        type="submit"
-        disabled={!canSubmit}
-        data-testid="submit-step-a"
-        className={`w-full py-3 rounded-lg font-bold ${
-          canSubmit
-            ? 'bg-brand-purple text-white'
-            : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-        }`}
-      >
-        Siguiente → Pago
-      </button>
+      <div className="pt-6">
+        <button
+          type="submit"
+          data-testid="submit-step-a"
+          className="w-full font-black uppercase tracking-widest py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-colors bg-white text-black hover:bg-gray-200 cursor-pointer"
+        >
+          Siguiente Paso: Pago →
+        </button>
+        {!canSubmit && (
+          <p className="text-center text-red-400 text-sm mt-3 font-medium">
+            Si hay algún error, haz clic en el botón para ver qué campo te falta por completar correctamente.
+          </p>
+        )}
+      </div>
     </form>
   );
 }
