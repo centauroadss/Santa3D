@@ -1,0 +1,20 @@
+{
+  "_comment": "Mergear el array `crons` dentro de vercel.json. Horas en UTC; Caracas = UTC-4.",
+  "crons": [
+    {
+      "path": "/api/cron/bcv-sync",
+      "schedule": "35 20 * * 1-5",
+      "_note": "16:35 Caracas L-V — primera ventana tras publicación BCV (>4:30pm)"
+    },
+    {
+      "path": "/api/cron/bcv-sync",
+      "schedule": "30 21 * * 1-5",
+      "_note": "17:30 Caracas L-V — reintento corto"
+    },
+    {
+      "path": "/api/cron/bcv-sync",
+      "schedule": "0 0 * * 2-6",
+      "_note": "20:00 Caracas L-V (= 00:00 UTC día siguiente) — red de seguridad"
+    }
+  ]
+}

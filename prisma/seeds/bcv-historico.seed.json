@@ -1,0 +1,72 @@
+[
+  {
+    "fecha": "2026-04-24",
+    "fechaValor": "2026-04-27",
+    "tasaUsdBs": 484.7074
+  },
+  {
+    "fecha": "2026-04-27",
+    "fechaValor": "2026-04-28",
+    "tasaUsdBs": 485.2251
+  },
+  {
+    "fecha": "2026-04-28",
+    "fechaValor": "2026-04-29",
+    "tasaUsdBs": 486.1955
+  },
+  {
+    "fecha": "2026-04-29",
+    "fechaValor": "2026-04-30",
+    "tasaUsdBs": 487.1192
+  },
+  {
+    "fecha": "2026-04-30",
+    "fechaValor": "2026-05-04",
+    "tasaUsdBs": 489.5547
+  },
+  {
+    "fecha": "2026-05-04",
+    "fechaValor": "2026-05-05",
+    "tasaUsdBs": 490.0442
+  },
+  {
+    "fecha": "2026-05-05",
+    "fechaValor": "2026-05-06",
+    "tasaUsdBs": 493.3765
+  },
+  {
+    "fecha": "2026-05-06",
+    "fechaValor": "2026-05-07",
+    "tasaUsdBs": 496.8301
+  },
+  {
+    "fecha": "2026-05-07",
+    "fechaValor": "2026-05-08",
+    "tasaUsdBs": 499.8608
+  },
+  {
+    "fecha": "2026-05-08",
+    "fechaValor": "2026-05-11",
+    "tasaUsdBs": 500.4606
+  },
+  {
+    "fecha": "2026-05-11",
+    "fechaValor": "2026-05-12",
+    "tasaUsdBs": 504.9146
+  },
+  {
+    "fecha": "2026-05-12",
+    "fechaValor": "2026-05-13",
+    "tasaUsdBs": 508.6004
+  },
+  {
+    "fecha": "2026-05-13",
+    "fechaValor": "2026-05-14",
+    "tasaUsdBs": 510.7873
+  },
+  {
+    "fecha": "2026-05-14",
+    "fechaValor": "2026-05-15",
+    "tasaUsdBs": 515.18
+  }
+]

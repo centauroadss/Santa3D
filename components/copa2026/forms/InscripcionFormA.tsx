@@ -1,31 +1,79 @@
+/**
+ * InscripcionFormA — Paso 1: datos del participante.
+ *
+ * Cambios respecto a la versión anterior:
+ *   ★ Cálculo automático de edad a partir de fechaNacimiento.
+ *   ★ Nuevo checkbox `confirmaMayoriaEdad` con label dinámico
+ *      "Declaro que tengo XX años y soy mayor de edad".
+ *   ★ Nuevo campo `biografia` (≤ 250 chars) con contador en vivo.
+ *   ★ El botón "Siguiente" queda inhabilitado hasta que los 3 checks
+ *      (aceptaTerminos, cesionDerechos, confirmaMayoriaEdad) estén en true
+ *      Y el resto del formulario sea válido.
+ *   ★ Validación de email, instagram y teléfono delegada al módulo
+ *      `lib/copa2026/validators`.
+ */
+
 'use client';
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { ArrowRight, UploadCloud, CheckCircle2 } from 'lucide-react';
-import { useDropzone } from 'react-dropzone';
 
-const formSchema = z.object({
-  nombre: z.string().min(2, 'El nombre es muy corto'),
-  apellido: z.string().min(2, 'El apellido es muy corto'),
-  cedulaIdentidad: z.string().regex(/^[VEPvep]-?\d{1,9}$/, 'Debe empezar por V, E, o P seguido de máximo 9 números (Ej: V-12345678 o V12345678)'),
-  email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'El email debe tener un @ y un sufijo válido (ej. usuario@dominio.com)'),
-  telefono: z.string().regex(/^(?:\+58|0)?(412|422|414|424|416|426)\d{7}$/, 'Debe empezar con +58 o 0 seguido del prefijo válido (ej: 412, 414) y tener 10 dígitos'),
-  instagram: z.string().regex(/^@[\w.-]+$/, 'Debe empezar con @').min(2, 'Requerido'),
-  fechaNacimiento: z.string().min(1, 'La fecha de nacimiento es requerida'),
-  categoria: z.enum(['RENDER', 'IA', 'AMBAS'], {
-    required_error: 'Debes seleccionar una categoría',
-  }),
-  aceptaTerminos: z.literal(true, {
-    errorMap: () => ({ message: 'Debes aceptar los términos y condiciones' })
-  }),
-  cesionDerechos: z.literal(true, {
-    errorMap: () => ({ message: 'Debes aceptar la cesión de derechos' })
+import React, { useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
+import {
+  isValidEmail,
+  isValidInstagram,
+  validateVenezuelanPhone,
+  calculateAge,
+  esMayorDeEdad,
+  validateBiografia,
+  BIOGRAFIA_MAX,
+  EDAD_MINIMA,
+} from '@/lib/copa2026/validators';
+
+// ─── Schema ─────────────────────────────────────────────────────────────────
+
+export const formASchema = z
+  .object({
+    nombre: z.string().min(2, 'El nombre es muy corto'),
+    apellido: z.string().min(2, 'El apellido es muy corto'),
+    cedulaIdentidad: z
+      .string()
+      .regex(/^[VEPvep]-?\d{1,9}$/, 'Debe empezar por V, E o P y tener números'),
+    email: z.string().refine(isValidEmail, 'Email inválido (debe tener @ y dominio)'),
+    telefono: z
+      .string()
+      .refine((v) => validateVenezuelanPhone(v).ok, {
+        message: 'Teléfono venezolano inválido (prefijos 412/422, 414/424, 416/426)',
+      }),
+    instagram: z
+      .string()
+      .refine(isValidInstagram, 'Instagram debe empezar con @ y no tener espacios'),
+    fechaNacimiento: z.string().min(1, 'Requerida'),
+    categoria: z.enum(['RENDER', 'IA', 'AMBAS']),
+    biografia: z
+      .string()
+      .refine((v) => validateBiografia(v).ok, {
+        message: `Biografía requerida, máximo ${BIOGRAFIA_MAX} caracteres`,
+      }),
+    aceptaTerminos: z.literal(true, {
+      errorMap: () => ({ message: 'Debe aceptar los términos' }),
+    }),
+    cesionDerechos: z.literal(true, {
+      errorMap: () => ({ message: 'Debe aceptar la cesión de derechos' }),
+    }),
+    confirmaMayoriaEdad: z.literal(true, {
+      errorMap: () => ({ message: 'Debe declarar ser mayor de edad' }),
+    }),
+    fotoPerfilFile: z
+      .any()
+      .refine((f) => f instanceof File, 'Debe cargar una fotografía'),
   })
-});
+  .refine((d) => esMayorDeEdad(d.fechaNacimiento), {
+    message: `Debe tener al menos ${EDAD_MINIMA} años`,
+    path: ['fechaNacimiento'],
+  });
 
-export type FormAData = z.infer<typeof formSchema> & { fotoPerfilFile?: File };
+export type FormAData = z.infer<typeof formASchema>;
+
+// ─── Componente ─────────────────────────────────────────────────────────────
 
 interface Props {
   initialData?: Partial<FormAData>;
@@ -33,301 +81,318 @@ interface Props {
 }
 
 export default function InscripcionFormA({ initialData, onSubmit }: Props) {
-  const { register, handleSubmit, formState: { errors, isValid }, watch, setValue } = useForm<FormAData>({
-    resolver: zodResolver(formSchema),
-    mode: 'all',
-    defaultValues: {
-      categoria: 'RENDER',
-      ...initialData
-    }
-  });
+  const [nombre, setNombre] = useState(initialData?.nombre ?? '');
+  const [apellido, setApellido] = useState(initialData?.apellido ?? '');
+  const [cedulaIdentidad, setCedula] = useState(initialData?.cedulaIdentidad ?? '');
+  const [email, setEmail] = useState(initialData?.email ?? '');
+  const [telefono, setTelefono] = useState(initialData?.telefono ?? '');
+  const [instagram, setInstagram] = useState(initialData?.instagram ?? '');
+  const [fechaNacimiento, setFechaNac] = useState(initialData?.fechaNacimiento ?? '');
+  const [categoria, setCategoria] = useState<'RENDER' | 'IA' | 'AMBAS'>(
+    (initialData?.categoria as any) ?? 'RENDER'
+  );
+  const [biografia, setBiografia] = useState(initialData?.biografia ?? '');
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [cesionDerechos, setCesionDerechos] = useState(false);
+  const [confirmaMayoriaEdad, setConfirmaEdad] = useState(false);
+  const [fotoPerfilFile, setFoto] = useState<File | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const selectedCategory = watch('categoria');
-  const aceptaTerminos = watch('aceptaTerminos');
-  const cesionDerechos = watch('cesionDerechos');
-  const [fotoPerfilFile, setFotoPerfilFile] = useState<File | null>(initialData?.fotoPerfilFile || null);
+  // ── Edad calculada en vivo ───────────────────────────────────────────────
+  const edad = useMemo(() => {
+    if (!fechaNacimiento) return 0;
+    return calculateAge(fechaNacimiento);
+  }, [fechaNacimiento]);
 
-  const [isValidatingFace, setIsValidatingFace] = useState(false);
-  const [faceError, setFaceError] = useState<string | null>(null);
+  const labelMayoriaEdad =
+    edad > 0
+      ? `Declaro que tengo ${edad} años y soy mayor de edad`
+      : 'Declaro que soy mayor de edad';
 
+  // Si la edad cambia y deja de ser mayor, desmarcar el check
   useEffect(() => {
-    // Cargar face-api.js dinámicamente si no existe
-    if (typeof window !== 'undefined' && !(window as any).faceapi) {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js';
-      script.async = true;
-      document.body.appendChild(script);
+    if (edad > 0 && edad < EDAD_MINIMA && confirmaMayoriaEdad) {
+      setConfirmaEdad(false);
     }
-  }, []);
+  }, [edad, confirmaMayoriaEdad]);
 
-  const validateFaceLocally = async (file: File) => {
-    setIsValidatingFace(true);
-    setFaceError(null);
-    try {
-      const faceapi = (window as any).faceapi;
-      if (!faceapi) {
-        // Fallback si la librería no carga rápido, lo dejamos pasar
-        setFotoPerfilFile(file);
-        setIsValidatingFace(false);
-        return;
+  // ── Contador de biografía ────────────────────────────────────────────────
+  const bioInfo = validateBiografia(biografia);
+  const bioCounterColor =
+    bioInfo.length > BIOGRAFIA_MAX
+      ? 'text-red-500'
+      : bioInfo.length > BIOGRAFIA_MAX - 30
+        ? 'text-orange-500'
+        : 'text-gray-500';
+
+  // ── Estado del botón ─────────────────────────────────────────────────────
+  const allChecksOk = aceptaTerminos && cesionDerechos && confirmaMayoriaEdad;
+  const fechaOk = !!fechaNacimiento && esMayorDeEdad(fechaNacimiento);
+  const baseOk =
+    nombre.length >= 2 &&
+    apellido.length >= 2 &&
+    /^[VEPvep]-?\d{1,9}$/.test(cedulaIdentidad) &&
+    isValidEmail(email) &&
+    validateVenezuelanPhone(telefono).ok &&
+    isValidInstagram(instagram) &&
+    fechaOk &&
+    bioInfo.ok &&
+    !!fotoPerfilFile;
+  const canSubmit = allChecksOk && baseOk;
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = {
+      nombre,
+      apellido,
+      cedulaIdentidad,
+      email,
+      telefono,
+      instagram,
+      fechaNacimiento,
+      categoria,
+      biografia,
+      aceptaTerminos: true as const,
+      cesionDerechos: true as const,
+      confirmaMayoriaEdad: true as const,
+      fotoPerfilFile,
+    };
+    const parsed = formASchema.safeParse(data);
+    if (!parsed.success) {
+      const fieldErrors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const k = issue.path[0]?.toString() ?? '_';
+        fieldErrors[k] = issue.message;
       }
-
-      // Cargar modelos mínimos si no están cargados
-      if (!faceapi.nets.tinyFaceDetector.isLoaded) {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
-      }
-
-      // Leer imagen para validarla
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.src = objectUrl;
-
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-
-      const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
-      URL.revokeObjectURL(objectUrl);
-
-      if (detections.length === 0) {
-        setFaceError('No se ha detectado ningún rostro humano en la imagen.');
-        setFotoPerfilFile(null);
-      } else if (detections.length > 1) {
-        setFaceError('Se detectó más de una persona. La foto debe ser individual.');
-        setFotoPerfilFile(null);
-      } else {
-        // Todo OK
-        setFotoPerfilFile(file);
-        setFaceError(null);
-      }
-    } catch (e) {
-      console.error("Error validando rostro:", e);
-      // En caso de error técnico de la librería, dejamos pasar para no bloquear
-      setFotoPerfilFile(file);
-    } finally {
-      setIsValidatingFace(false);
+      setErrors(fieldErrors);
+      return;
     }
+    setErrors({});
+    onSubmit(parsed.data);
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      'image/jpeg': ['.jpeg', '.jpg'],
-      'image/png': ['.png'],
-    },
-    maxFiles: 1,
-    maxSize: 5 * 1024 * 1024,
-    onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        validateFaceLocally(acceptedFiles[0]);
-      }
-    }
-  });
-
-  const onFormSubmit = (data: any) => {
-    onSubmit({ ...data, fotoPerfilFile: fotoPerfilFile! });
-  };
-
-  const isFormValid = isValid && fotoPerfilFile !== null && aceptaTerminos && cesionDerechos;
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-black uppercase text-white mb-2">Paso 1: Datos Personales</h2>
-        <p className="text-gray-400">Ingresa tus datos para registrarte en el concurso</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-6" data-testid="form-a">
+      {/* Datos básicos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Field
+          label="Nombre"
+          name="nombre"
+          value={nombre}
+          onChange={setNombre}
+          error={errors.nombre}
+        />
+        <Field
+          label="Apellido"
+          name="apellido"
+          value={apellido}
+          onChange={setApellido}
+          error={errors.apellido}
+        />
+        <Field
+          label="Cédula (V-12345678)"
+          name="cedulaIdentidad"
+          value={cedulaIdentidad}
+          onChange={setCedula}
+          error={errors.cedulaIdentidad}
+        />
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          error={errors.email}
+        />
+        <Field
+          label="Teléfono"
+          name="telefono"
+          value={telefono}
+          onChange={setTelefono}
+          error={errors.telefono}
+          hint="Ej: 04125551234"
+        />
+        <Field
+          label="Instagram"
+          name="instagram"
+          value={instagram}
+          onChange={setInstagram}
+          error={errors.instagram}
+          hint="Ej: @miusuario"
+        />
         <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Nombre</label>
+          <label className="block text-sm font-bold mb-1">Fecha de nacimiento</label>
           <input
-            {...register('nombre')}
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
-            placeholder="Tu nombre"
-          />
-          {errors.nombre && <p className="text-red-500 text-xs mt-1">{errors.nombre.message}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Apellido</label>
-          <input
-            {...register('apellido')}
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
-            placeholder="Tu apellido"
-          />
-          {errors.apellido && <p className="text-red-500 text-xs mt-1">{errors.apellido.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Cédula de Identidad</label>
-          <input
-            {...register('cedulaIdentidad')}
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors uppercase"
-            placeholder="V-12345678"
-          />
-          {errors.cedulaIdentidad && <p className="text-red-500 text-xs mt-1">{errors.cedulaIdentidad.message}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Teléfono Móvil (Sin el 0)</label>
-          <div className="flex">
-            <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-white/10 bg-[#222] text-gray-400 font-bold">
-              +58
-            </span>
-            <input
-              {...register('telefono')}
-              className="w-full bg-[#111] border border-white/10 rounded-r-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
-              placeholder="4141234567"
-              maxLength={10}
-            />
-          </div>
-          {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Correo Electrónico</label>
-          <input
-            {...register('email')}
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
-            placeholder="tu@email.com"
-            type="email"
-          />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Usuario de Instagram</label>
-          <input
-            {...register('instagram')}
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
-            placeholder="@usuario"
-          />
-          {errors.instagram && <p className="text-red-500 text-xs mt-1">{errors.instagram.message}</p>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Fecha de Nacimiento</label>
-          <input
-            {...register('fechaNacimiento')}
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
             type="date"
-            max={new Date().toISOString().split('T')[0]}
+            value={fechaNacimiento}
+            onChange={(e) => setFechaNac(e.target.value)}
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
+            data-testid="input-fechaNacimiento"
           />
-          {errors.fechaNacimiento && <p className="text-red-500 text-xs mt-1">{errors.fechaNacimiento.message}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-gray-300 mb-2">Edad Calculada</label>
-          <input
-            readOnly
-            value={
-              watch('fechaNacimiento') 
-                ? Math.floor((new Date().getTime() - new Date(watch('fechaNacimiento')).getTime()) / 31557600000) 
-                : 0
-            }
-            className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-gray-500 outline-none cursor-not-allowed"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-bold text-gray-300 mb-4">Selecciona la Categoría</label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {['RENDER', 'IA', 'AMBAS'].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setValue('categoria', cat as any, { shouldValidate: true })}
-              className={`py-4 rounded-xl font-bold uppercase transition-all border ${
-                selectedCategory === cat 
-                  ? 'bg-brand-purple text-white border-brand-purple shadow-lg shadow-brand-purple/20' 
-                  : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-        {errors.categoria && <p className="text-red-500 text-xs mt-2">{errors.categoria.message}</p>}
-      </div>
-
-      <div className={!fotoPerfilFile ? "p-4 bg-red-500/5 rounded-2xl border border-red-500/20" : ""}>
-        <label className="block text-sm font-bold text-gray-300 mb-2">Foto de Perfil (Solo rostros) *Requerido</label>
-        <p className="text-xs text-gray-400 mb-3">La imagen debe mostrar claramente tu rostro humano (una sola persona). No paisajes, no animales.</p>
-        <div 
-          {...getRootProps()} 
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-            isDragActive ? 'border-brand-purple bg-brand-purple/10' : 
-            faceError ? 'border-red-500 bg-red-500/10' :
-            isValidatingFace ? 'border-yellow-500 bg-yellow-500/10' :
-            fotoPerfilFile ? 'border-green-500 bg-green-500/5' : 'border-red-500/50 hover:border-brand-purple bg-[#111]'
-          }`}
-        >
-          <input {...getInputProps()} />
-          {isValidatingFace ? (
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 border-4 border-brand-purple border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-brand-purple font-bold">Validando rostro mediante IA...</p>
-            </div>
-          ) : fotoPerfilFile ? (
-            <div className="flex flex-col items-center gap-2">
-              <CheckCircle2 className="text-green-500" size={32} />
-              <p className="text-white font-bold">{fotoPerfilFile.name}</p>
-              <p className="text-green-500 text-sm">Foto validada adjunta correctamente</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <UploadCloud className="text-red-400" size={32} />
-              <p className="text-red-300 font-medium">DEBES ADJUNTAR TU FOTO DE PERFIL AQUÍ</p>
-              <p className="text-gray-500 text-sm">Arrastra o haz clic. JPEG o PNG hasta 5MB</p>
-            </div>
+          {edad > 0 && (
+            <p className="text-xs text-gray-500 mt-1" data-testid="edad-display">
+              Edad: {edad} años
+            </p>
+          )}
+          {errors.fechaNacimiento && (
+            <p className="text-xs text-red-500 mt-1">{errors.fechaNacimiento}</p>
           )}
         </div>
-        {faceError && <p className="text-red-500 text-xs mt-2 font-bold">{faceError}</p>}
+        <div>
+          <label className="block text-sm font-bold mb-1">Categoría</label>
+          <select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value as any)}
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
+            data-testid="input-categoria"
+          >
+            <option value="RENDER">Render (USD 5)</option>
+            <option value="IA">IA (USD 5)</option>
+            <option value="AMBAS">Ambas (USD 10)</option>
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-4 pt-6 border-t border-white/10">
-        <label className="flex items-start gap-3 cursor-pointer group">
-          <div className="mt-1 flex-shrink-0">
-            <input type="checkbox" {...register('aceptaTerminos')} className="w-5 h-5 accent-brand-purple" />
-          </div>
-          <span className="text-sm text-gray-400 group-hover:text-gray-300">
-            He leído y acepto los <a href="#" className="text-brand-purple hover:underline">Términos y Condiciones</a> del concurso Copa 2026.
-          </span>
+      {/* Foto de perfil */}
+      <div>
+        <label className="block text-sm font-bold mb-1">
+          Fotografía del participante (rostro visible)
         </label>
-        {errors.aceptaTerminos && <p className="text-red-500 text-xs ml-8">{errors.aceptaTerminos.message}</p>}
-
-        <label className="flex items-start gap-3 cursor-pointer group">
-          <div className="mt-1 flex-shrink-0">
-            <input type="checkbox" {...register('cesionDerechos')} className="w-5 h-5 accent-brand-purple" />
-          </div>
-          <span className="text-sm text-gray-400 group-hover:text-gray-300">
-            Acepto la cesión de derechos de autor para la exhibición pública de la obra en caso de resultar seleccionada.
-          </span>
-        </label>
-        {errors.cesionDerechos && <p className="text-red-500 text-xs ml-8">{errors.cesionDerechos.message}</p>}
-      </div>
-
-      <div className="pt-6">
-        <button
-          type="submit"
-          disabled={!isFormValid}
-          className={`w-full font-black uppercase tracking-widest py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-colors ${
-            isFormValid 
-            ? 'bg-white text-black hover:bg-gray-200 cursor-pointer' 
-            : 'bg-[#222] text-gray-600 border border-gray-800 cursor-not-allowed opacity-70'
-          }`}
-        >
-          {isFormValid ? 'Siguiente Paso: Pago' : 'Completa todos los datos'} <ArrowRight size={20} />
-        </button>
-        {!isFormValid && (
-          <p className="text-center text-red-400 text-sm mt-3 font-medium">
-            Debe completar correctamente todos los campos, adjuntar la foto y aceptar los términos para habilitar el botón.
-          </p>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
+          data-testid="input-fotoPerfil"
+        />
+        {errors.fotoPerfilFile && (
+          <p className="text-xs text-red-500 mt-1">{errors.fotoPerfilFile}</p>
         )}
       </div>
+
+      {/* ★ Biografía con contador ─────────────────────────────────────────── */}
+      <div>
+        <label className="block text-sm font-bold mb-1">
+          Biografía profesional
+        </label>
+        <p className="text-xs text-gray-500 mb-2">
+          Describe en una breve reseña tu trayectoria, resaltando las actividades que te
+          hacen un profesional o entusiasta del diseño gráfico.
+        </p>
+        <textarea
+          value={biografia}
+          onChange={(e) => setBiografia(e.target.value.slice(0, BIOGRAFIA_MAX + 50))}
+          maxLength={BIOGRAFIA_MAX + 50}
+          rows={4}
+          className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
+          data-testid="input-biografia"
+          placeholder="Soy diseñador 3D con 5 años de experiencia en..."
+        />
+        <div className="flex justify-between mt-1">
+          <p className="text-xs text-red-500">{errors.biografia ?? bioInfo.reason ?? ''}</p>
+          <p
+            className={`text-xs ${bioCounterColor}`}
+            data-testid="biografia-counter"
+          >
+            {bioInfo.length} / {BIOGRAFIA_MAX}
+          </p>
+        </div>
+      </div>
+
+      {/* ★ Checks obligatorios ────────────────────────────────────────────── */}
+      <div className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
+        <Checkbox
+          name="aceptaTerminos"
+          checked={aceptaTerminos}
+          onChange={setAceptaTerminos}
+          label="Acepto los términos y condiciones del concurso"
+        />
+        <Checkbox
+          name="cesionDerechos"
+          checked={cesionDerechos}
+          onChange={setCesionDerechos}
+          label="Autorizo la cesión de derechos de imagen y de uso de los videos remitidos"
+        />
+        <Checkbox
+          name="confirmaMayoriaEdad"
+          checked={confirmaMayoriaEdad}
+          onChange={setConfirmaEdad}
+          label={labelMayoriaEdad}
+          disabled={!fechaOk}
+        />
+      </div>
+
+      {/* Botón Siguiente */}
+      <button
+        type="submit"
+        disabled={!canSubmit}
+        data-testid="submit-step-a"
+        className={`w-full py-3 rounded-lg font-bold ${
+          canSubmit
+            ? 'bg-brand-purple text-white'
+            : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+        }`}
+      >
+        Siguiente → Pago
+      </button>
     </form>
+  );
+}
+
+// ─── Subcomponentes ─────────────────────────────────────────────────────────
+
+function Field({
+  label, name, value, onChange, error, hint, type = 'text',
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  hint?: string;
+  type?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-bold mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
+        data-testid={`input-${name}`}
+      />
+      {hint && !error && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+}
+
+function Checkbox({
+  name, checked, onChange, label, disabled,
+}: {
+  name: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label
+      className={`flex items-center gap-3 cursor-pointer ${
+        disabled ? 'opacity-50 cursor-not-allowed' : ''
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => !disabled && onChange(e.target.checked)}
+        disabled={disabled}
+        data-testid={`check-${name}`}
+        className="w-5 h-5"
+      />
+      <span className="text-sm">{label}</span>
+    </label>
   );
 }

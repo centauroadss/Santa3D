@@ -1,0 +1,40 @@
+// ============================================================
+// PATCH al schema Prisma para los módulos de Inscripción + Admin.
+//
+// Mergear estos cambios sobre los modelos existentes
+// `InscripcionCopa2026` y `PagoMovil`. Después correr:
+//   npx prisma migrate dev --name inscripcion_v2
+// ============================================================
+
+model InscripcionCopa2026 {
+  // ── Campos existentes (no tocar) ─────────────────────────
+  // id, nombre, apellido, cedulaIdentidad, email, telefono,
+  // instagram, fechaNacimiento, categoria, fotoPerfilUrl,
+  // tokenVideo, tokenExpiry, estatusInscripcion, estatusToken,
+  // createdAt, etc.
+
+  // ── NUEVOS campos ─────────────────────────────────────────
+  biografia            String   @db.VarChar(250)             // Reseña ≤ 250 chars
+  confirmaMayoriaEdad  Boolean  @default(false)              // Check obligatorio
+  edadAlInscribir      Int                                   // Edad calculada al momento del POST
+  aceptaTerminos       Boolean  @default(false)              // ya existía implícito
+  cesionDerechos       Boolean  @default(false)              // ya existía implícito
+
+  @@index([cedulaIdentidad])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model PagoMovil {
+  // ── Campos existentes ─────────────────────────────────────
+  // id, inscripcionId, bancoOrigenCodigo, referencia,
+  // telefonoPago, cedulaPago, montoCapturadoBs, comprobanteUrl,
+  // fileHash, ocrJson, createdAt, etc.
+
+  // ── NUEVOS campos ─────────────────────────────────────────
+  concepto             String   @db.VarChar(255)             // Texto del concepto que el participante declaró
+  conceptoValidado     Boolean  @default(false)              // true si el concepto contiene nombre + cédula
+
+  @@index([referencia])
+  @@index([fileHash])
+}

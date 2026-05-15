@@ -164,6 +164,11 @@ export default function InscripcionWizard({
                 costoAmbasCategorias={costoAmbasCategorias}
                 categoria={formDataA.categoria as 'RENDER' | 'IA' | 'AMBAS' || 'RENDER'}
                 configPago={configPago}
+                participante={{
+                  nombre: formDataA.nombre || '',
+                  apellido: formDataA.apellido || '',
+                  cedulaIdentidad: formDataA.cedulaIdentidad || '',
+                }}
                 onBack={() => {
                   setStep('A');
                   setError(null);

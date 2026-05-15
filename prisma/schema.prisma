@@ -235,6 +235,11 @@ model InscripcionCopa2026 {
   estatusToken       EstatusToken       @default(PENDIENTE)
   estatusInscripcion EstatusInscripcion @default(PENDIENTE)
   fotoPerfilPath     String?            @db.VarChar(500)
+  biografia          String             @db.VarChar(250)
+  confirmaMayoriaEdad Boolean           @default(false)
+  edadAlInscribir    Int
+  aceptaTerminos     Boolean            @default(false)
+  cesionDerechos     Boolean            @default(false)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   pago               PagoMovil?
@@ -261,6 +266,8 @@ model PagoMovil {
   ocrResultadoRaw     Json?
   ocrConfianza        Float?
   estatusPago         EstatusPago         @default(EN_REVISION)
+  concepto            String              @db.VarChar(255)
+  conceptoValidado    Boolean             @default(false)
   createdAt           DateTime            @default(now())
 
   @@map("pagos_movil")
@@ -312,10 +319,10 @@ model Voto {
 
 model TasaBcvHistorico {
   id             Int      @id @default(autoincrement())
-  fecha          DateTime @unique @db.Date
-  fechaValor     DateTime @db.Date
-  tasaUsdBs      Decimal  @db.Decimal(18, 8)
-  fechaEjecucion DateTime @default(now())
+  fecha          DateTime @unique @db.Date              // Día Caracas de la ejecución
+  fechaValor     DateTime @unique @db.Date              // ★ NUEVO @unique
+  tasaUsdBs      Decimal  @unique @db.Decimal(18, 8)    // ★ NUEVO @unique
+  fechaEjecucion DateTime @default(now())               // Timestamp exacto
   fuenteUrl      String?  @db.VarChar(255)
 
   @@index([fechaValor])
