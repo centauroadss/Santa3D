@@ -76,30 +76,30 @@ export function validateVenezuelanPhone(s: string): {
 } {
   if (typeof s !== 'string') return { ok: false, reason: 'No es texto' };
 
-  const digits = s.replace(/[\s\-()]/g, '').replace(/^\+/, '');
-  let core: string;
-
-  if (digits.startsWith('58')) {
-    core = digits.slice(2);
-  } else if (digits.startsWith('0')) {
-    core = digits.slice(1);
-  } else {
-    core = digits;
+  const digits = s.replace(/[\s\-()]/g, '');
+  if (!digits.startsWith('+') && !digits.startsWith('0') && !digits.startsWith('58')) {
+    return { ok: false, reason: 'Debe incluir código de país (ej. +58) o empezar por 0' };
   }
 
-  if (!/^\d{10}$/.test(core)) {
-    return { ok: false, reason: 'Debe tener 10 dígitos significativos' };
+  // If Venezuelan (+58, 58, 0)
+  if (digits.startsWith('+58') || digits.startsWith('58') || digits.startsWith('0')) {
+    const core = digits.replace(/^\+?58/, '').replace(/^0/, '');
+    if (!/^\d{10}$/.test(core)) {
+      return { ok: false, reason: 'Teléfono venezolano debe tener 10 dígitos (ej. 412...)' };
+    }
+    const prefix = core.slice(0, 3);
+    if (!VE_PREFIXES.includes(prefix as (typeof VE_PREFIXES)[number])) {
+      return { ok: false, reason: `Prefijo ${prefix} no válido` };
+    }
+    return { ok: true, normalized: '+58' + core };
   }
 
-  const prefix = core.slice(0, 3);
-  if (!VE_PREFIXES.includes(prefix as (typeof VE_PREFIXES)[number])) {
-    return {
-      ok: false,
-      reason: `Prefijo ${prefix} no es válido. Use 412/422, 414/424 o 416/426.`,
-    };
+  // International
+  const pureDigits = digits.replace(/^\+/, '');
+  if (pureDigits.length < 8 || pureDigits.length > 15) {
+    return { ok: false, reason: 'Número internacional inválido' };
   }
-
-  return { ok: true, normalized: '0' + core };
+  return { ok: true, normalized: digits.startsWith('+') ? digits : '+' + digits };
 }
 
 // ─── EDAD ───────────────────────────────────────────────────────────────────

@@ -41,7 +41,7 @@ export const formASchema = z
     telefono: z
       .string()
       .refine((v) => validateVenezuelanPhone(v).ok, {
-        message: 'Teléfono venezolano inválido (prefijos 412/422, 414/424, 416/426)',
+        message: 'Número de teléfono inválido',
       }),
     instagram: z
       .string()
@@ -206,14 +206,41 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
           onChange={setEmail}
           error={errors.email}
         />
-        <Field
-          label="Teléfono"
-          name="telefono"
-          value={telefono}
-          onChange={setTelefono}
-          error={errors.telefono}
-          hint="Ej: 04125551234"
-        />
+        {/* Teléfono adaptado con Select */}
+        <div>
+          <label className="block text-sm font-bold mb-1">Teléfono Móvil</label>
+          <div className="flex">
+            <select
+              value={telefono.startsWith('+') ? telefono.split(' ')[0] : '+58'}
+              onChange={(e) => {
+                const prefix = e.target.value;
+                const rest = telefono.includes(' ') ? telefono.split(' ').slice(1).join(' ') : telefono.replace(/^\+?\d{2,3}/, '').replace(/^0/, '');
+                setTelefono(`${prefix} ${rest}`);
+              }}
+              className="px-2 rounded-l-lg border border-r-0 border-white/10 bg-[#222] text-gray-400 font-bold focus:outline-none focus:border-brand-purple transition-colors"
+            >
+              <option value="+58">+58 (VE)</option>
+              <option value="+1">+1 (US/CA)</option>
+              <option value="+57">+57 (CO)</option>
+              <option value="+34">+34 (ES)</option>
+              <option value="+54">+54 (AR)</option>
+              <option value="+56">+56 (CL)</option>
+            </select>
+            <input
+              type="text"
+              value={telefono.includes(' ') ? telefono.split(' ').slice(1).join(' ') : telefono}
+              onChange={(e) => {
+                const prefix = telefono.startsWith('+') ? telefono.split(' ')[0] : '+58';
+                setTelefono(`${prefix} ${e.target.value.replace(/\D/g, '')}`);
+              }}
+              className="w-full bg-[#111] border border-white/10 rounded-r-lg px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+              placeholder="4125551234"
+              maxLength={15}
+            />
+          </div>
+          {errors.telefono && <p className="text-xs text-red-500 mt-1">{errors.telefono}</p>}
+        </div>
+
         <Field
           label="Instagram"
           name="instagram"
@@ -228,8 +255,9 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
             type="date"
             value={fechaNacimiento}
             onChange={(e) => setFechaNac(e.target.value)}
-            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
             data-testid="input-fechaNacimiento"
+            max={new Date().toISOString().split('T')[0]}
           />
           {edad > 0 && (
             <p className="text-xs text-gray-500 mt-1" data-testid="edad-display">
@@ -240,18 +268,28 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
             <p className="text-xs text-red-500 mt-1">{errors.fechaNacimiento}</p>
           )}
         </div>
-        <div>
-          <label className="block text-sm font-bold mb-1">Categoría</label>
-          <select
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value as any)}
-            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
-            data-testid="input-categoria"
-          >
-            <option value="RENDER">Render (USD 5)</option>
-            <option value="IA">IA (USD 5)</option>
-            <option value="AMBAS">Ambas (USD 10)</option>
-          </select>
+        
+        {/* Categoría: Tarjetas interactivas */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-bold mb-4">Selecciona la Categoría</label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {(['RENDER', 'IA', 'AMBAS'] as const).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCategoria(cat)}
+                className={`py-4 rounded-xl font-bold uppercase transition-all border ${
+                  categoria === cat 
+                    ? 'bg-brand-purple text-white border-brand-purple shadow-[0_0_15px_rgba(139,92,246,0.3)]' 
+                    : 'bg-[#111] text-gray-400 border-white/10 hover:border-white/30'
+                }`}
+                data-testid={`btn-categoria-${cat}`}
+              >
+                {cat} {cat === 'AMBAS' ? '(USD 10)' : '(USD 5)'}
+              </button>
+            ))}
+          </div>
+          {errors.categoria && <p className="text-red-500 text-xs mt-2">{errors.categoria}</p>}
         </div>
       </div>
 
@@ -272,7 +310,7 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
       </div>
 
       {/* ★ Biografía con contador ─────────────────────────────────────────── */}
-      <div>
+      <div className="relative">
         <label className="block text-sm font-bold mb-1">
           Biografía profesional
         </label>
@@ -280,15 +318,23 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
           Describe en una breve reseña tu trayectoria, resaltando las actividades que te
           hacen un profesional o entusiasta del diseño gráfico.
         </p>
-        <textarea
-          value={biografia}
-          onChange={(e) => setBiografia(e.target.value.slice(0, BIOGRAFIA_MAX + 50))}
-          maxLength={BIOGRAFIA_MAX + 50}
-          rows={4}
-          className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white"
-          data-testid="input-biografia"
-          placeholder="Soy diseñador 3D con 5 años de experiencia en..."
-        />
+        <div className="relative">
+          {/* Watermark Logo/Text */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-lg">
+            <span className="text-white/[0.03] text-6xl font-black uppercase tracking-widest rotate-[-10deg] select-none">
+              COPA 2026
+            </span>
+          </div>
+          <textarea
+            value={biografia}
+            onChange={(e) => setBiografia(e.target.value.slice(0, BIOGRAFIA_MAX + 50))}
+            maxLength={BIOGRAFIA_MAX + 50}
+            rows={4}
+            className="w-full bg-[#111]/80 backdrop-blur-sm border border-white/10 rounded-lg px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors relative z-10 bg-transparent resize-none"
+            data-testid="input-biografia"
+            placeholder="Soy diseñador 3D con 5 años de experiencia en..."
+          />
+        </div>
         <div className="flex justify-between mt-1">
           <p className="text-xs text-red-500">{errors.biografia ?? bioInfo.reason ?? ''}</p>
           <p
