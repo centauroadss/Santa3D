@@ -1,18 +1,42 @@
-import { DateTime } from 'luxon';
-import { prisma } from '@/lib/prisma';
-import axios from 'axios';
-import https from 'https';
+/**
+ * Scraper BCV — Concurso Santa 3D Venezolano
+ *
+ * Responsabilidades:
+ *  1. Obtener HTML de bcv.org.ve con reintentos y timeout.
+ *  2. Parsear "Fecha Valor" y "USD" del HTML.
+ *  3. Insertar/actualizar en `tasa_bcv_historico` respetando:
+ *     - fecha (día Caracas, no UTC)            → UNIQUE
+ *     - fechaValor (de la página BCV)          → UNIQUE
+ *     - tasaUsdBs                              → UNIQUE
+ *     - Cadena: prev.fechaValor === fecha_new
+ *
+ * Reemplaza completamente al archivo previo.
+ */
 
-const TZ = 'America/Caracas';
-const BCV_URL = 'https://www.bcv.org.ve/';
+import { DateTime } from 'luxon';
+import axios, { AxiosInstance } from 'axios';
+import https from 'https';
+import { prisma } from '@/lib/prisma';
+
+// ─── Constantes ─────────────────────────────────────────────────────────────
+export const TZ = 'America/Caracas';
+export const BCV_URL = 'https://www.bcv.org.ve/';
+export const MAX_RETRIES = 5;
+export const BASE_BACKOFF_MS = 2000;
+export const HTTP_TIMEOUT_MS = 15000;
+export const MIN_HTML_LENGTH = 1000;
 
 const MESES: Record<string, number> = {
   enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6,
-  julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12
+  julio: 7, agosto: 8, septiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
 };
 
+// ─── Parsers (puros, fáciles de testear) ────────────────────────────────────
+
 export function parseFechaValor(html: string): DateTime {
-  const m = html.match(/Fecha\s+Valor:\s*[^,]+,\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+  const m = html.match(
+    /Fecha\s+Valor:\s*[^,]+,\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i
+  );
   if (!m) throw new Error('BCV: no se pudo parsear Fecha Valor');
   const [, d, mesTxt, y] = m;
   const mes = MESES[mesTxt.toLowerCase()];
@@ -24,7 +48,6 @@ export function parseFechaValor(html: string): DateTime {
 }
 
 export function parseTasaUsd(html: string): number {
-  // BCV usa coma decimal: "508,60040000"
   const m = html.match(/USD[\s\S]{0,200}?([\d.]+,\d+)/);
   if (!m) throw new Error('BCV: no se pudo parsear tasa USD');
   const tasa = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
@@ -34,39 +57,155 @@ export function parseTasaUsd(html: string): number {
   return tasa;
 }
 
-export async function syncBcv(): Promise<{ fechaValor: Date; tasa: number; nuevo: boolean }> {
-  const agent = new https.Agent({
-    rejectUnauthorized: false
-  });
+// ─── Cálculo de "hoy" en Caracas (★ FIX bug TZ) ─────────────────────────────
 
-  const res = await axios.get(BCV_URL, {
-    httpsAgent: agent,
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+/**
+ * Devuelve la medianoche del día Caracas correspondiente al instante dado.
+ * Reemplaza el bug `new Date().setUTCHours(0,0,0,0)` que devolvía el día UTC.
+ */
+export function caracasToday(now: Date = new Date()): Date {
+  return DateTime.fromJSDate(now).setZone(TZ).startOf('day').toJSDate();
+}
+
+// ─── HTTP con reintentos (★ FIX scraping frágil) ────────────────────────────
+
+const defaultAxios: AxiosInstance = axios.create({
+  httpsAgent: new https.Agent({ rejectUnauthorized: false }), // BCV usa cert auto-firmado
+  timeout: HTTP_TIMEOUT_MS,
+  headers: {
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    'User-Agent': 'Mozilla/5.0 (Santa3D-Validator/1.0)',
+  },
+  validateStatus: (s) => s === 200,
+});
+
+export interface HttpClient {
+  get: (url: string, config?: any) => Promise<{ status: number; data: any }>;
+}
+
+export async function fetchBcvHtml(
+  retries: number = MAX_RETRIES,
+  client: HttpClient = defaultAxios
+): Promise<string> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await client.get(BCV_URL);
+      if (
+        res.status === 200 &&
+        typeof res.data === 'string' &&
+        res.data.length >= MIN_HTML_LENGTH
+      ) {
+        return res.data;
+      }
+      lastErr = new Error(
+        `BCV: cuerpo vacío o muy corto (${
+          typeof res.data === 'string' ? res.data.length : 'N/A'
+        })`
+      );
+    } catch (e) {
+      lastErr = e;
     }
-  });
+    if (attempt < retries) {
+      const wait = BASE_BACKOFF_MS * 2 ** (attempt - 1);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  throw new Error(
+    `BCV: falló tras ${retries} intentos: ${(lastErr as Error)?.message}`
+  );
+}
 
-  if (res.status !== 200) throw new Error(`BCV: HTTP ${res.status}`);
-  const html = res.data;
+// ─── Resultado del sync ─────────────────────────────────────────────────────
 
+export interface SyncResult {
+  fecha?: Date;
+  fechaValor?: Date;
+  tasa?: number;
+  nuevo?: boolean;
+  chainOk?: boolean;
+  warnings?: string[];
+  skipped?: boolean;
+}
+
+// ─── Función principal ──────────────────────────────────────────────────────
+
+/**
+ * Ejecuta el sync con BCV. Inyectables `now` y `bcvFetcher` para tests.
+ */
+export async function syncBcv(
+  now: Date = new Date(),
+  bcvFetcher: () => Promise<string> = () => fetchBcvHtml()
+): Promise<SyncResult> {
+  const html = await bcvFetcher();
   const fechaValor = parseFechaValor(html).toJSDate();
   const tasa = parseTasaUsd(html);
+  const fecha = caracasToday(now);
+  const warnings: string[] = [];
 
-  // Fecha Ejecucion = "Hoy" (cuando corre el scraper, típicamente la tarde del día anterior a la fecha valor)
-  const fechaEjecucion = new Date();
-  fechaEjecucion.setUTCHours(0, 0, 0, 0);
+  // ★ Regla R1: fechaValor > fecha
+  if (fechaValor.getTime() <= fecha.getTime()) {
+    return { skipped: true };
+  }
+
+  // ★ Validar unicidad columnar (a nivel aplicación, el schema también la enforce)
+  const conflicto = await prisma.tasaBcvHistorico.findFirst({
+    where: {
+      OR: [{ fechaValor }, { tasaUsdBs: tasa }],
+      NOT: { fecha },
+    },
+  });
+  if (conflicto) {
+    throw new Error(
+      `BCV: conflicto de unicidad. ` +
+        `fechaValor=${fechaValor.toISOString().slice(0, 10)} ` +
+        `o tasa=${tasa} ya existen en id=${conflicto.id}`
+    );
+  }
+
+  // ★ Validar cadena FV_prev === fecha_new
+  const prev = await prisma.tasaBcvHistorico.findFirst({
+    where: { fecha: { lt: fecha } },
+    orderBy: { fecha: 'desc' },
+  });
+  const chainOk = !prev || +prev.fechaValor === +fecha;
+  if (!chainOk && prev) {
+    warnings.push(
+      `Cadena rota: prev.fechaValor=${prev.fechaValor
+        .toISOString()
+        .slice(0, 10)} != fecha=${fecha
+        .toISOString()
+        .slice(0, 10)}. Hay un gap (¿feriado o cron caído?).`
+    );
+  }
 
   const existente = await prisma.tasaBcvHistorico.findUnique({
-    where: { fecha: fechaEjecucion }
+    where: { fecha },
   });
 
   await prisma.tasaBcvHistorico.upsert({
-    where: { fecha: fechaEjecucion },
-    update: { tasaUsdBs: tasa, fechaValor, fechaEjecucion: new Date() },
-    create: { fecha: fechaEjecucion, fechaValor, tasaUsdBs: tasa, fechaEjecucion: new Date(), fuenteUrl: BCV_URL }
+    where: { fecha },
+    update: {
+      tasaUsdBs: tasa,
+      fechaValor,
+      fechaEjecucion: new Date(),
+    },
+    create: {
+      fecha,
+      fechaValor,
+      tasaUsdBs: tasa,
+      fechaEjecucion: new Date(),
+      fuenteUrl: BCV_URL,
+    },
   });
 
-  return { fechaValor, tasa, nuevo: !existente };
+  return {
+    fecha,
+    fechaValor,
+    tasa,
+    nuevo: !existente,
+    chainOk,
+    warnings,
+  };
 }
