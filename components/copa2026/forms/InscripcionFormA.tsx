@@ -38,11 +38,15 @@ export const formASchema = z
       .string()
       .regex(/^[VEPvep]-?\d{1,9}$/, 'Debe empezar por V, E o P y tener números'),
     email: z.string().refine(isValidEmail, 'Email inválido (debe tener @ y dominio)'),
-    telefono: z
-      .string()
-      .refine((v) => validateVenezuelanPhone(v).ok, {
-        message: 'Número de teléfono inválido',
-      }),
+    telefono: z.string().superRefine((v, ctx) => {
+      const result = validateVenezuelanPhone(v);
+      if (!result.ok) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: result.reason || 'Número de teléfono inválido',
+        });
+      }
+    }),
     instagram: z
       .string()
       .refine(isValidInstagram, 'Instagram debe empezar con @ y no tener espacios'),
