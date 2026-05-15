@@ -36,25 +36,31 @@ export async function GET(request: NextRequest) {
         const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
         const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
 
-        const data = historico.map(h => {
-            const fv = DateTime.fromJSDate(h.fechaValor).setZone(TZ).startOf('day').toJSDate();
-            let estado: 'futura' | 'vigente' | 'historica';
-            if (+fv > +hoyCaracas)       estado = 'futura';
-            else if (+fv === +hoyCaracas) estado = 'vigente';
-            else                          estado = 'historica';
+        const dataMap = new Map();
+        historico.forEach(h => {
+            const fvStr = h.fechaValor.toISOString().split('T')[0];
+            if (!dataMap.has(fvStr)) {
+                const fv = DateTime.fromJSDate(h.fechaValor).setZone(TZ).startOf('day').toJSDate();
+                let estado: 'futura' | 'vigente' | 'historica';
+                if (+fv > +hoyCaracas)       estado = 'futura';
+                else if (+fv === +hoyCaracas) estado = 'vigente';
+                else                          estado = 'historica';
 
-            const tasa = parseFloat(h.tasaUsdBs.toString());
-            return {
-                id: h.id,
-                fecha: h.fecha,
-                fechaEjecucion: h.fechaEjecucion,
-                fechaValor: h.fechaValor,
-                tasaUsdBs: tasa.toFixed(4),
-                costoUnaCategoriaBs: (tasa * costoUnaCategoria).toFixed(2),
-                costoAmbasCategoriasBs: (tasa * costoAmbasCategorias).toFixed(2),
-                estado
-            };
+                const tasa = parseFloat(h.tasaUsdBs.toString());
+                dataMap.set(fvStr, {
+                    id: h.id,
+                    fecha: h.fecha,
+                    fechaEjecucion: h.fechaEjecucion,
+                    fechaValor: h.fechaValor,
+                    tasaUsdBs: tasa.toFixed(4),
+                    costoUnaCategoriaBs: (tasa * costoUnaCategoria).toFixed(2),
+                    costoAmbasCategoriasBs: (tasa * costoAmbasCategorias).toFixed(2),
+                    estado
+                });
+            }
         });
+
+        const data = Array.from(dataMap.values());
 
         return NextResponse.json({ success: true, data }, {
             headers: {
