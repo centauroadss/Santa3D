@@ -36,10 +36,23 @@ export async function GET(request: NextRequest) {
         const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
         const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
 
-        const dataMap = new Map();
+        const seenFv = new Set<string>();
+        const seenFecha = new Set<string>();
+        const seenTasa = new Set<string>();
+        const data: any[] = [];
+
         historico.forEach(h => {
             const fvStr = h.fechaValor.toISOString().split('T')[0];
-            if (!dataMap.has(fvStr)) {
+            const fechaStr = h.fecha.toISOString().split('T')[0];
+            const tasaStr = h.tasaUsdBs.toString();
+
+            // Solo agregamos el registro si NINGUNO de sus tres valores principales se ha visto antes.
+            // Esto garantiza unicidad estricta en las tres columnas.
+            if (!seenFv.has(fvStr) && !seenFecha.has(fechaStr) && !seenTasa.has(tasaStr)) {
+                seenFv.add(fvStr);
+                seenFecha.add(fechaStr);
+                seenTasa.add(tasaStr);
+
                 const fv = DateTime.fromJSDate(h.fechaValor).setZone(TZ).startOf('day').toJSDate();
                 let estado: 'futura' | 'vigente' | 'historica';
                 if (+fv > +hoyCaracas)       estado = 'futura';
@@ -47,7 +60,7 @@ export async function GET(request: NextRequest) {
                 else                          estado = 'historica';
 
                 const tasa = parseFloat(h.tasaUsdBs.toString());
-                dataMap.set(fvStr, {
+                data.push({
                     id: h.id,
                     fecha: h.fecha,
                     fechaEjecucion: h.fechaEjecucion,
@@ -59,8 +72,6 @@ export async function GET(request: NextRequest) {
                 });
             }
         });
-
-        const data = Array.from(dataMap.values());
 
         return NextResponse.json({ success: true, data }, {
             headers: {
