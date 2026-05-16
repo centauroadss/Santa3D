@@ -470,16 +470,16 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
       <div className="pt-6">
         <button
           type="submit"
+          disabled={!canSubmit}
           data-testid="submit-step-a"
-          className="w-full font-black uppercase tracking-widest py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-colors bg-white text-black hover:bg-gray-200 cursor-pointer"
+          className={`w-full font-black uppercase tracking-widest py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-colors ${
+            !canSubmit 
+              ? 'bg-[#222] text-gray-500 cursor-not-allowed border border-white/10' 
+              : 'bg-white text-black hover:bg-gray-200 cursor-pointer shadow-lg shadow-white/20'
+          }`}
         >
-          Siguiente Paso: Pago →
+          {canSubmit ? 'Siguiente Paso: Pago →' : 'Completa todos los campos para continuar'}
         </button>
-        {!canSubmit && (
-          <p className="text-center text-red-400 text-sm mt-3 font-medium">
-            Si hay algún error, haz clic en el botón para ver qué campo te falta por completar correctamente.
-          </p>
-        )}
       </div>
     </form>
   );

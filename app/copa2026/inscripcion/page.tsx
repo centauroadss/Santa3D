@@ -10,27 +10,29 @@ export default async function InscripcionPage() {
     // Obtener la tasa del BCV más reciente
     const tasaBcv = await getTasaDelDia().catch(() => 0);
 
-    // Obtener bancos activos
-    const bancosRaw = await prisma.banco.findMany({
-        where: { activo: true },
-        orderBy: { nombre: 'asc' }
-    });
-    
-    const bancos = bancosRaw.map(b => ({ codigo: b.codigo, nombre: b.nombre }));
+    let bancos = [];
+    let configMap: Record<string, string> = {};
+    try {
+        const bancosRaw = await prisma.banco.findMany({
+            where: { activo: true },
+            orderBy: { nombre: 'asc' }
+        });
+        bancos = bancosRaw.map(b => ({ codigo: b.codigo, nombre: b.nombre }));
 
-    // Obtener configuración de pago
+        const configs = await prisma.configConcurso.findMany({
+            where: {
+                clave: {
+                    in: ['pago_telefono', 'pago_cedula', 'pago_banco', 'costo_una_categoria', 'costo_ambas_categorias']
+                }
+            }
+        });
+        configMap = configs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
+    } catch (e) {
+        console.warn("No DB connection locally, using fallbacks");
+    }
+
     // Por defecto, valores de ejemplo por si no están configurados en BD
     const fallbackConfig = { telefono: '04140000000', cedula: 'J123456789', banco: 'Banesco' };
-    
-    const configs = await prisma.configConcurso.findMany({
-        where: {
-            clave: {
-                in: ['pago_telefono', 'pago_cedula', 'pago_banco', 'costo_una_categoria', 'costo_ambas_categorias']
-            }
-        }
-    });
-
-    const configMap = configs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
 
     const configPago = {
         telefono: configMap['pago_telefono'] || fallbackConfig.telefono,

@@ -153,24 +153,24 @@ export default function InscripcionFormB(props: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-left" data-testid="form-b">
       {/* INSTRUCCIONES DE PAGO */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-3">
-        <h3 className="text-red-500 font-semibold mb-2">Realiza tu pago móvil a esta cuenta:</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="text-neutral-400">Banco:</div>
-          <div className="text-white font-medium">{configPago.banco}</div>
-          <div className="text-neutral-400">Teléfono:</div>
-          <div className="text-white font-medium">{configPago.telefono}</div>
-          <div className="text-neutral-400">Cédula / RIF:</div>
-          <div className="text-white font-medium">{configPago.cedula}</div>
-          
-          <div className="col-span-2 my-2 border-t border-neutral-800"></div>
-          
-          <div className="text-neutral-400">Monto Inscripción:</div>
-          <div className="text-white font-medium">${MONTO_USD.toFixed(2)} USD</div>
-          <div className="text-neutral-400">Tasa BCV del Día:</div>
-          <div className="text-white font-medium">Bs. {tasaBcv.toFixed(4)}</div>
-          <div className="text-neutral-400 font-bold text-lg mt-1">Monto Exacto a Pagar:</div>
-          <div className="text-red-500 font-bold text-xl mt-1">Bs. {MONTO_BS}</div>
+      <div className="bg-brand-purple/10 border border-brand-purple/30 rounded-2xl p-6 text-center">
+        <h3 className="text-sm text-brand-purple font-bold uppercase tracking-widest mb-4">Monto a Pagar Hoy</h3>
+        <div className="text-5xl font-black text-white mb-2">{MONTO_BS} Bs.</div>
+        <p className="text-sm text-gray-400 font-mono">USD {MONTO_USD.toFixed(2)} x T/C BCV {tasaBcv.toFixed(4)} Bs/USD</p>
+
+        <div className="mt-6 pt-6 border-t border-brand-purple/20 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+          <div>
+            <p className="text-xs text-gray-500 uppercase font-bold">Banco</p>
+            <p className="text-white font-medium">{configPago.banco}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase font-bold">Teléfono</p>
+            <p className="text-white font-medium">{configPago.telefono}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase font-bold">Cédula / RIF</p>
+            <p className="text-white font-medium">{configPago.cedula}</p>
+          </div>
         </div>
       </div>
 
@@ -191,20 +191,50 @@ export default function InscripcionFormB(props: Props) {
           </select>
           {errors.bancoOrigen && <p className="text-xs text-red-500 mt-1">{errors.bancoOrigen}</p>}
         </div>
-        <Field
-          label="Cédula del pagador"
-          name="cedulaPago"
-          value={cedulaPago}
-          onChange={setCedulaPago}
-          error={errors.cedulaPago}
-        />
-        <Field
-          label="Teléfono del pagador (10 dígitos)"
-          name="telefonoPago"
-          value={telefonoPago}
-          onChange={setTelPago}
-          error={errors.telefonoPago}
-        />
+        <div>
+          <label className="block text-sm font-bold mb-1">Cédula del pagador (V-12345678)</label>
+          <input
+            type="text"
+            value={cedulaPago}
+            onChange={(e) => setCedulaPago(e.target.value)}
+            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white uppercase"
+            data-testid="input-cedulaPago"
+          />
+          {errors.cedulaPago && <p className="text-xs text-red-500 mt-1">{errors.cedulaPago}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-bold mb-1">Teléfono del pagador</label>
+          <div className="flex">
+            <select
+              value={telefonoPago.startsWith('+') ? telefonoPago.split(' ')[0] : '+58'}
+              onChange={(e) => {
+                const prefix = e.target.value;
+                const rest = telefonoPago.includes(' ') ? telefonoPago.split(' ').slice(1).join(' ') : telefonoPago.replace(/^\+?\d{2,3}/, '').replace(/^0/, '');
+                setTelPago(`${prefix} ${rest}`);
+              }}
+              className="px-2 rounded-l-lg border border-r-0 border-white/10 bg-[#222] text-gray-400 font-bold focus:outline-none focus:border-brand-purple transition-colors"
+            >
+              <option value="+58">+58 (VE)</option>
+              <option value="+1">+1 (US/CA)</option>
+              <option value="+57">+57 (CO)</option>
+              <option value="+34">+34 (ES)</option>
+              <option value="+54">+54 (AR)</option>
+              <option value="+56">+56 (CL)</option>
+            </select>
+            <input
+              type="text"
+              value={telefonoPago.includes(' ') ? telefonoPago.split(' ').slice(1).join(' ') : telefonoPago}
+              onChange={(e) => {
+                const prefix = telefonoPago.startsWith('+') ? telefonoPago.split(' ')[0] : '+58';
+                setTelPago(`${prefix} ${e.target.value.replace(/\D/g, '')}`);
+              }}
+              className="w-full bg-[#111] border border-white/10 rounded-r-lg px-4 py-3 text-white focus:border-brand-purple outline-none transition-colors"
+              placeholder="4125551234"
+              maxLength={15}
+            />
+          </div>
+          {errors.telefonoPago && <p className="text-xs text-red-500 mt-1">{errors.telefonoPago}</p>}
+        </div>
         <Field
           label="Número de referencia"
           name="referencia"

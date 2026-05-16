@@ -103,7 +103,13 @@ export default function InscripcionWizard({
       
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.error || 'Ocurrió un error al procesar tu inscripción. Intenta de nuevo.');
+      let errorMsg = err.response?.data?.error || 'Ocurrió un error al procesar tu inscripción. Intenta de nuevo.';
+      if (err.response?.data?.campos && Array.isArray(err.response.data.campos)) {
+        errorMsg += ` Campos con error: ${err.response.data.campos.join(', ')}`;
+      } else if (err.response?.data?.detalle) {
+        errorMsg += ` - ${err.response.data.detalle}`;
+      }
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
