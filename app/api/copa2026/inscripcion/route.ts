@@ -210,8 +210,20 @@ export async function POST(req: Request) {
       include: { pago: true },
     });
 
-    // ── Email de bienvenida (omitido en este snippet, mantener el actual) ─
-
+    // ── Email de bienvenida ───────────────────────────────────────────────
+    try {
+      const { sendEmailConfirmacion } = await import('@/lib/copa2026/emails/email1-confirmacion');
+      await sendEmailConfirmacion({
+        nombre: inscripcion.nombre,
+        email: inscripcion.email,
+        categoria: inscripcion.categoria,
+        montoBs: inscripcion.pago?.montoCapturadoBs ?? 0,
+        telefonoPago: inscripcion.pago?.telefonoPago ?? '-',
+        tokenVideo: inscripcion.tokenVideo,
+      });
+    } catch (e) {
+      console.error('Error enviando email de bienvenida:', e);
+    }
     return NextResponse.json({
       success: true,
       inscripcionId: inscripcion.id,

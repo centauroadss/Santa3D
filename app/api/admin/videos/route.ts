@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         cedulaIdentidad: insc.cedulaIdentidad,
         instagram: insc.instagram || '-',
         fechaNacimiento: insc.fechaNacimiento ? insc.fechaNacimiento.toISOString() : null,
-        edad: insc.edad || null,
+        edad: insc.edadAlInscribir || insc.edad || null,
         email: insc.email,
         telefono: insc.telefono,
         categoria: insc.categoria,
