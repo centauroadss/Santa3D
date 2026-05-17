@@ -179,7 +179,7 @@ export async function POST(req: Request) {
         instagram,
         fechaNacimiento: new Date(fechaNacimiento),
         categoria,
-        fotoPerfilUrl: fotoUrl,
+        fotoPerfilPath: fotoUrl,
         biografia,
         edadAlInscribir: calculateAge(fechaNacimiento),
         confirmaMayoriaEdad: true,
@@ -192,15 +192,18 @@ export async function POST(req: Request) {
         pago: {
           create: {
             bancoOrigenCodigo,
-            cedulaPago,
             telefonoPago: validateVenezuelanPhone(telefonoPago).normalized!,
             referencia,
             concepto,
             conceptoValidado: conceptoCheck.ok,
             montoCapturadoBs: ocrResult.montoDetectado ?? 0,
-            comprobanteUrl,
+            montoEsperadoBs: ocrResult.rawJson?.montoEsperadoCalculado ?? 0,
+            tasaBcvUsada: ocrResult.rawJson?.tasaUsada ?? 0,
+            fechaPagoExtractada: ocrResult.rawJson?.fechaPagoNormalizada ? new Date(ocrResult.rawJson.fechaPagoNormalizada) : null,
+            comprobantePath: comprobanteUrl,
             fileHash,
-            ocrJson: ocrResult.rawJson ?? {},
+            ocrResultadoRaw: ocrResult.rawJson ?? {},
+            ocrConfianza: ocrResult.confidence ?? 0,
           },
         },
       },
@@ -214,10 +217,10 @@ export async function POST(req: Request) {
       inscripcionId: inscripcion.id,
       tokenVideo,
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error('Inscripción error:', e);
     return NextResponse.json(
-      { error: 'Error interno procesando la inscripción' },
+      { error: `Error interno procesando la inscripción: ${e?.message || String(e)}` },
       { status: 500 }
     );
   }
