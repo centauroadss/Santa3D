@@ -188,7 +188,7 @@ export async function POST(req: Request) {
         tokenVideo,
         tokenExpiry,
         estatusInscripcion: 'APROBADO',
-        estatusToken: 'ACTIVO',
+        estatusToken: 'PENDIENTE',
         pago: {
           create: {
             bancoOrigenCodigo,
