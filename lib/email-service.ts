@@ -42,7 +42,7 @@ export const EmailService = {
             const data = await resend.emails.send({
                 from: 'mercadeo@centauroads.com',
                 to: to,
-                bcc: 'mercadeo@gmail.com', // CCO requerido por el cliente
+                bcc: 'mercadeo@centauroads.com', // CCO requerido por el cliente
                 subject: subject,
                 html,
                 attachments: attachments?.map(att => ({
