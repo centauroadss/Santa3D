@@ -84,6 +84,7 @@ export default function InscripcionWizard({
       formData.append('cedulaPago', dataB.cedulaPago);
       formData.append('bancoOrigen', dataB.bancoOrigen);
       formData.append('referencia', dataB.referencia);
+      formData.append('concepto', dataB.concepto);
       formData.append('comprobanteFile', dataB.comprobanteFile);
 
       // Llamada real a la API (Fase Backend)

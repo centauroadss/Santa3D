@@ -15,7 +15,7 @@ Write-Host "`n📦 PASO 1: RESPALDO EN GITHUB..." -ForegroundColor Yellow
 try {
     git add .
     git commit -m "$CommitMessage"
-    git push origin main
+    git push origin copa2026
     Write-Host "✅ Código subido a GitHub exitosamente." -ForegroundColor Green
 } catch {
     Write-Host "⚠️ Advertencia en Git (puede que no haya cambios o error de conexión)." -ForegroundColor Yellow
@@ -54,7 +54,7 @@ try {
     # Comando remoto: Descomprimir, Instalar dependencias (por si acaso), Build, Reload
     $RemoteCommand = "cd /var/www/santa3d && tar -xzf deploy_full_update.tar.gz && export PATH=`$PATH:/root/.nvm/versions/node/v20.10.0/bin && export NODE_OPTIONS='--max-old-space-size=4096' && npm install --legacy-peer-deps && npm run build && pm2 reload all"
     
-    ssh -i santa3d_key -o StrictHostKeyChecking=no root@167.172.217.151 $RemoteCommand
+    ssh -i santa3d_key -o StrictHostKeyChecking=no root@167.172.217.151 "$RemoteCommand"
     Write-Host "✅ DESPLIEGUE COMPLETADO EXITOSAMENTE." -ForegroundColor Green
 } catch {
     Write-Host "❌ Error durante la construcción en el servidor." -ForegroundColor Red

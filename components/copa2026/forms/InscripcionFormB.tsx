@@ -11,8 +11,9 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { z } from 'zod';
+import { useDropzone } from 'react-dropzone';
 import {
   validateVenezuelanPhone,
   validateConcepto,
@@ -85,7 +86,37 @@ export default function InscripcionFormB(props: Props) {
   const [referencia, setReferencia] = useState(initialData?.referencia ?? '');
   const [concepto, setConcepto] = useState(initialData?.concepto ?? conceptoSugerido);
   const [comprobanteFile, setComprobante] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ── Dropzone ─────────────────────────────────────────────────────────────
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      setComprobante(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      if (errors.comprobanteFile) {
+        setErrors(prev => ({ ...prev, comprobanteFile: '' }));
+      }
+    }
+  }, [errors.comprobanteFile]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop,
+    accept: {
+      'image/jpeg': ['.jpeg', '.jpg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp'],
+      'application/pdf': ['.pdf']
+    },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024, // 5MB
+  });
 
   // ── Validación del concepto en vivo ─────────────────────────────────────
   const conceptoCheck = validateConcepto(
@@ -192,14 +223,37 @@ export default function InscripcionFormB(props: Props) {
           {errors.bancoOrigen && <p className="text-xs text-red-500 mt-1">{errors.bancoOrigen}</p>}
         </div>
         <div>
-          <label className="block text-sm font-bold mb-1">Cédula del pagador (V-12345678)</label>
-          <input
-            type="text"
-            value={cedulaPago}
-            onChange={(e) => setCedulaPago(e.target.value)}
-            className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-white uppercase"
-            data-testid="input-cedulaPago"
-          />
+          <label className="block text-sm font-bold mb-1">Cédula del pagador</label>
+          <div className="flex">
+            <select
+              value={cedulaPago.match(/^[a-zA-Z]/) ? cedulaPago.charAt(0).toUpperCase() : 'V'}
+              onChange={(e) => {
+                const prefix = e.target.value;
+                const number = cedulaPago.replace(/^[a-zA-Z]-?/, '');
+                setCedulaPago(number ? `${prefix}-${number}` : prefix);
+              }}
+              className="px-2 rounded-l-lg border border-r-0 border-white/10 bg-[#222] text-gray-400 font-bold focus:outline-none focus:border-brand-purple transition-colors"
+            >
+              <option value="V">V-</option>
+              <option value="E">E-</option>
+              <option value="P">P-</option>
+              <option value="J">J-</option>
+              <option value="G">G-</option>
+            </select>
+            <input
+              type="text"
+              value={cedulaPago.replace(/^[a-zA-Z]-?/, '')}
+              onChange={(e) => {
+                const prefix = cedulaPago.match(/^[a-zA-Z]/) ? cedulaPago.charAt(0).toUpperCase() : 'V';
+                const val = e.target.value.replace(/\D/g, '');
+                setCedulaPago(`${prefix}-${val}`);
+              }}
+              className="w-full bg-[#111] border border-white/10 rounded-r-lg px-4 py-3 text-white uppercase focus:border-brand-purple outline-none transition-colors"
+              placeholder="12345678"
+              maxLength={9}
+              data-testid="input-cedulaPago"
+            />
+          </div>
           {errors.cedulaPago && <p className="text-xs text-red-500 mt-1">{errors.cedulaPago}</p>}
         </div>
         <div>
@@ -278,15 +332,38 @@ export default function InscripcionFormB(props: Props) {
 
       {/* Comprobante */}
       <div>
-        <label className="block text-sm font-bold mb-1">
+        <label className="block text-sm font-bold mb-2">
           Comprobante de pago (imagen o PDF)
         </label>
-        <input
-          type="file"
-          accept="image/*,application/pdf"
-          onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
-          data-testid="input-comprobante"
-        />
+        <div 
+          {...getRootProps()} 
+          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+            isDragActive ? 'border-brand-purple bg-brand-purple/10' : 'border-white/20 bg-[#111] hover:border-white/40'
+          }`}
+          data-testid="dropzone-comprobante"
+        >
+          <input {...getInputProps()} data-testid="input-comprobante" />
+          {preview ? (
+            <div className="space-y-4">
+              {comprobanteFile?.type === 'application/pdf' ? (
+                <div className="mx-auto w-16 h-16 bg-red-500/20 rounded-lg flex items-center justify-center">
+                  <span className="text-3xl">📄</span>
+                </div>
+              ) : (
+                <img src={preview} alt="Preview" className="mx-auto h-32 object-contain rounded" />
+              )}
+              <p className="text-sm text-brand-purple">Clic o arrastra para cambiar el archivo</p>
+            </div>
+          ) : (
+            <div className="space-y-2 py-4">
+              <div className="mx-auto w-12 h-12 bg-[#222] rounded-full flex items-center justify-center mb-3">
+                <span className="text-2xl">📸</span>
+              </div>
+              <p className="text-white font-medium">Sube el comprobante o arrástralo aquí</p>
+              <p className="text-gray-500 text-sm">Formatos soportados: JPG, PNG, WEBP, PDF (Max 5MB)</p>
+            </div>
+          )}
+        </div>
         {errors.comprobanteFile && (
           <p className="text-xs text-red-500 mt-1">{errors.comprobanteFile}</p>
         )}
