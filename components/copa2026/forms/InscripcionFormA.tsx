@@ -105,6 +105,36 @@ export default function InscripcionFormA({ initialData, onSubmit }: Props) {
   const [isValidatingFace, setIsValidatingFace] = useState(false);
   const [faceError, setFaceError] = useState<string | null>(null);
 
+  // Load from sessionStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('copa2026_formDataA');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.nombre) setNombre(parsed.nombre);
+          if (parsed.apellido) setApellido(parsed.apellido);
+          if (parsed.cedulaIdentidad) setCedula(parsed.cedulaIdentidad);
+          if (parsed.email) setEmail(parsed.email);
+          if (parsed.telefono) setTelefono(parsed.telefono);
+          if (parsed.instagram) setInstagram(parsed.instagram);
+          if (parsed.fechaNacimiento) setFechaNac(parsed.fechaNacimiento);
+          if (parsed.categoria) setCategoria(parsed.categoria);
+          if (parsed.biografia) setBiografia(parsed.biografia);
+        } catch (e) {}
+      }
+    }
+  }, []);
+
+  // Save to sessionStorage when values change
+  useEffect(() => {
+    const dataToSave = {
+      nombre, apellido, cedulaIdentidad, email, telefono,
+      instagram, fechaNacimiento, categoria, biografia
+    };
+    sessionStorage.setItem('copa2026_formDataA', JSON.stringify(dataToSave));
+  }, [nombre, apellido, cedulaIdentidad, email, telefono, instagram, fechaNacimiento, categoria, biografia]);
+
   useEffect(() => {
     // Cargar face-api.js dinámicamente si no existe
     if (typeof window !== 'undefined' && !(window as any).faceapi) {

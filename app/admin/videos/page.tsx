@@ -37,6 +37,9 @@ interface InscripcionData {
     comprobanteUrl: string | null;
     ocrData: any;
     referencia: string;
+    bancoOrigen: string;
+    montoBs: string | number;
+    concepto: string;
     videos: VideoData[];
 }
 
@@ -291,7 +294,7 @@ export default function AdminInscripcionesPage() {
                                                 </div>
                                                 <div className="text-[10px] text-gray-500 font-mono mt-1">C.I: {insc.cedulaIdentidad}</div>
                                                 {insc.fechaNacimiento && (
-                                                    <div className="text-[10px] text-gray-500 font-mono">Nac: {new Date(insc.fechaNacimiento).toLocaleDateString()} ({insc.edad} años)</div>
+                                                    <div className="text-[10px] text-gray-500 font-mono">Nac: {insc.fechaNacimiento.split('T')[0].split('-').reverse().join('/')} ({insc.edad} años)</div>
                                                 )}
                                                 <div className="text-[10px] text-brand-purple font-mono font-bold">{insc.instagram}</div>
                                                 <div className="text-[10px] text-gray-400 font-mono mt-1">{insc.email}</div>
@@ -326,14 +329,14 @@ export default function AdminInscripcionesPage() {
                                             <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.referencia}>
                                                 <span className="font-bold text-gray-400 mr-1">Ref:</span>{insc.referencia || 'N/D'}
                                             </div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.bancoDetectado || 'N/D'}>
-                                                <span className="font-bold text-gray-400 mr-1">Banco:</span>{insc.ocrData?.bancoDetectado || 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.bancoOrigen || 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Banco:</span>{insc.bancoOrigen || 'N/D'}
                                             </div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.montoDetectado ? `${insc.ocrData.montoDetectado} Bs` : 'N/D'}>
-                                                <span className="font-bold text-gray-400 mr-1">Monto:</span>{insc.ocrData?.montoDetectado ? `${insc.ocrData.montoDetectado} Bs` : 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.montoBs ? `${insc.montoBs} Bs` : 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Monto:</span>{insc.montoBs ? `${insc.montoBs} Bs` : 'N/D'}
                                             </div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.conceptoExtraido || 'N/D'}>
-                                                <span className="font-bold text-gray-400 mr-1">Conc:</span>{insc.ocrData?.conceptoExtraido || 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.concepto || 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Conc:</span>{insc.concepto || 'N/D'}
                                             </div>
                                             {insc.ocrData?.conformidad ? (
                                                 <div className="mt-2 text-green-700 font-bold bg-green-100 p-1 rounded text-center" title={insc.ocrData.conformidad}>

@@ -82,6 +82,9 @@ export async function GET(request: NextRequest) {
         comprobanteUrl: comprobanteUrl,
         ocrData: insc.pago?.ocrResultadoRaw || null,
         referencia: insc.pago?.referencia || '-',
+        bancoOrigen: insc.pago?.bancoOrigenCodigo || '-',
+        montoBs: insc.pago?.montoCapturadoBs || '-',
+        concepto: insc.pago?.concepto || '-',
         videos: formattedVideos
       };
     }));

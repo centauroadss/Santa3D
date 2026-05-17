@@ -89,6 +89,29 @@ export default function InscripcionFormB(props: Props) {
   const [preview, setPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Load from sessionStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('copa2026_formDataB');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.bancoOrigen) setBanco(parsed.bancoOrigen);
+          if (parsed.cedulaPago) setCedulaPago(parsed.cedulaPago);
+          if (parsed.telefonoPago) setTelPago(parsed.telefonoPago);
+          if (parsed.referencia) setReferencia(parsed.referencia);
+          if (parsed.concepto) setConcepto(parsed.concepto);
+        } catch (e) {}
+      }
+    }
+  }, []);
+
+  // Save to sessionStorage when values change
+  useEffect(() => {
+    const dataToSave = { bancoOrigen, cedulaPago, telefonoPago, referencia, concepto };
+    sessionStorage.setItem('copa2026_formDataB', JSON.stringify(dataToSave));
+  }, [bancoOrigen, cedulaPago, telefonoPago, referencia, concepto]);
+
   // ── Dropzone ─────────────────────────────────────────────────────────────
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];

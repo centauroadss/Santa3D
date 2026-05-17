@@ -99,6 +99,10 @@ export default function InscripcionWizard({
         sessionStorage.setItem('copa2026_conformidad_mensaje', res.data.conformidadMensaje);
       }
 
+      // Limpiar el estado de los formularios porque ya fue exitoso
+      sessionStorage.removeItem('copa2026_formDataA');
+      sessionStorage.removeItem('copa2026_formDataB');
+
       // Redirigir a pantalla de confirmación
       router.push('/copa2026/inscripcion/confirmacion');
       
