@@ -1,0 +1,437 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.6 [39m[90m/app[39m
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 13/05 usa 508.6004
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 13/05 usa 508.6004
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 13/05 usa 508.6004
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 13/05 usa 508.6004
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mpago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato menor al esperado menos margen → inválido
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato menor al esperado menos margen → inválido
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato menor al esperado menos margen → inválido
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato menor al esperado menos margen → inválido
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato menor al esperado menos margen → inválido
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato menor al esperado menos margen → inválido
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato dentro de margen 5 Bs → válido
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato dentro de margen 5 Bs → válido
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato dentro de margen 5 Bs → válido
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2mcandidato dentro de margen 5 Bs → válido
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2melige el menor candidato que cumple el umbral
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2melige el menor candidato que cumple el umbral
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2melige el menor candidato que cumple el umbral
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2melige el menor candidato que cumple el umbral
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2melige el menor candidato que cumple el umbral
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2melige el menor candidato que cumple el umbral
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2msin tasas en BD → isValid=false con motivo
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2msin tasas en BD → isValid=false con motivo
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2msin tasas en BD → isValid=false con motivo
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`) VALUES (?,?,?,?), (?,?,?,?), (?,?,?,?), (?,?,?,?)
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2msin tasas en BD → isValid=false con motivo
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2msin tasas en BD → isValid=false con motivo
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha[2m > [22m[2msin tasas en BD → isValid=false con motivo
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/validar-pago.test.ts[2m > [22m[2mvalidarPago — selección de tasa por fecha
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+ [31m❯[39m tests/integration/validar-pago.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 159[2mms[22m[39m
+[31m     [31m×[31m pago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada[39m[32m 60[2mms[22m[39m
+[31m     [31m×[31m pago del 13/05 usa 508.6004[39m[32m 15[2mms[22m[39m
+[31m     [31m×[31m pago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)[39m[32m 21[2mms[22m[39m
+     [32m✓[39m candidato menor al esperado menos margen → inválido[32m 19[2mms[22m[39m
+[31m     [31m×[31m candidato dentro de margen 5 Bs → válido[39m[32m 12[2mms[22m[39m
+[31m     [31m×[31m elige el menor candidato que cumple el umbral[39m[32m 13[2mms[22m[39m
+[31m     [31m×[31m sin tasas en BD → isValid=false con motivo[39m[32m 14[2mms[22m[39m
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`id`,`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`,`fuenteUrl`) VALUES (?,?,?,?,?,?)
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`id` = ? LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae monto = 2470.56 (no null, no 0)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`id`,`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`,`fuenteUrl`) VALUES (?,?,?,?,?,?)
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`id` = ? LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae referencia COMPLETA (12 dígitos, no solo últimos 6)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`id`,`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`,`fuenteUrl`) VALUES (?,?,?,?,?,?)
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`id` = ? LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mextrae concepto = "raul dhoy 11599999"
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`id`,`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`,`fuenteUrl`) VALUES (?,?,?,?,?,?)
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`id` = ? LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida concepto contiene nombre + cédula del participante
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`id`,`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`,`fuenteUrl`) VALUES (?,?,?,?,?,?)
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`id` = ? LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query BEGIN
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query INSERT INTO `copa2026`.`tasa_bcv_historico` (`id`,`fecha`,`fechaValor`,`tasaUsdBs`,`fechaEjecucion`,`fuenteUrl`) VALUES (?,?,?,?,?,?)
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`id` = ? LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query COMMIT
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22m[2mconformidad general = true (referencia + monto + concepto OK)
+[22m[39mprisma:query SELECT `copa2026`.`tasa_bcv_historico`.`id`, `copa2026`.`tasa_bcv_historico`.`fecha`, `copa2026`.`tasa_bcv_historico`.`fechaValor`, `copa2026`.`tasa_bcv_historico`.`tasaUsdBs`, `copa2026`.`tasa_bcv_historico`.`fechaEjecucion`, `copa2026`.`tasa_bcv_historico`.`fuenteUrl` FROM `copa2026`.`tasa_bcv_historico` WHERE `copa2026`.`tasa_bcv_historico`.`fecha` <= ? ORDER BY `copa2026`.`tasa_bcv_historico`.`fecha` DESC LIMIT ? OFFSET ?
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy
+[22m[39mprisma:query DELETE FROM `copa2026`.`pagos_movil` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy
+[22m[39mprisma:query DELETE FROM `copa2026`.`inscripciones_copa2026` WHERE 1=1
+
+[90mstdout[2m | tests/integration/ocr-fields.test.ts[2m > [22m[2mvalidarComprobanteOcr — recibo Raul Dhoy
+[22m[39mprisma:query DELETE FROM `copa2026`.`tasa_bcv_historico` WHERE 1=1
+
+ [31m❯[39m tests/integration/ocr-fields.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 134[2mms[22m[39m
+     [32m✓[39m extrae monto = 2470.56 (no null, no 0)[32m 52[2mms[22m[39m
+     [32m✓[39m extrae referencia COMPLETA (12 dígitos, no solo últimos 6)[32m 17[2mms[22m[39m
+     [32m✓[39m extrae concepto = "raul dhoy 11599999"[32m 12[2mms[22m[39m
+     [32m✓[39m valida concepto contiene nombre + cédula del participante[32m 13[2mms[22m[39m
+[31m     [31m×[31m valida monto >= USD 5 × tasa BCV (con margen 5 Bs)[39m[32m 18[2mms[22m[39m
+[31m     [31m×[31m conformidad general = true (referencia + monto + concepto OK)[39m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/unit/ocr-extractors.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m29 passed[39m[22m[90m (37)[39m
+[2m   Start at [22m 20:26:32
+[2m   Duration [22m 1.50s[2m (transform 181ms, setup 0ms, import 456ms, tests 311ms, environment 0ms)[22m
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 8 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/integration/ocr-fields.test.ts[2m > [22mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22mvalida monto >= USD 5 × tasa BCV (con margen 5 Bs)
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m tests/integration/ocr-fields.test.ts:[2m132:23[22m[39m
+    [90m130|[39m     )[33m;[39m
+    [90m131|[39m     [90m// tasa 493.3765 × 5 = 2466.88; recibo 2470.56 > 2466.88 → OK[39m
+    [90m132|[39m     [34mexpect[39m(r[33m.[39mmontoOk)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m133|[39m     [34mexpect[39m(r[33m.[39mmontoEsperadoBs)[33m.[39m[34mtoBeCloseTo[39m([34m2466.88[39m[33m,[39m [34m2[39m)[33m;[39m
+    [90m134|[39m     [34mexpect[39m(r[33m.[39mtasaUsada)[33m.[39m[34mtoBeCloseTo[39m([34m493.3765[39m[33m,[39m [34m4[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/ocr-fields.test.ts[2m > [22mvalidarComprobanteOcr — recibo Raul Dhoy[2m > [22mconformidad general = true (referencia + monto + concepto OK)
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m tests/integration/ocr-fields.test.ts:[2m144:34[22m[39m
+    [90m142|[39m       [35mnew[39m [33mDate[39m([32m'2026-05-06T03:00:00Z'[39m)
+    [90m143|[39m     )[33m;[39m
+    [90m144|[39m     [34mexpect[39m(r[33m.[39mconformidadGeneral)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                                  [31m^[39m
+    [90m145|[39m     [34mexpect[39m(r[33m.[39misValid)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m146|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/validar-pago.test.ts[2m > [22mvalidarPago — selección de tasa por fecha[2m > [22mpago del 12/05 usa 504.9146 aunque la tasa del 13/05 ya esté cargada
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m tests/integration/validar-pago.test.ts:[2m45:23[22m[39m
+    [90m 43|[39m     const r = await validarComprobanteOcr('dummy', 10, '1234', 'A', 'B…
+    [90m 44|[39m
+    [90m 45|[39m     [34mexpect[39m(r[33m.[39misValid)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m 46|[39m     [34mexpect[39m(r[33m.[39mrawJson[33m.[39mtasaUsada)[33m.[39m[34mtoBeCloseTo[39m([34m504.9146[39m[33m,[39m [34m4[39m)[33m;[39m
+    [90m 47|[39m     [34mexpect[39m([33m+[39mr[33m.[39mrawJson[33m.[39mfechaValorTasa[33m![39m)[33m.[39m[34mtoBe[39m([33m+[39m[34mfv[39m([34m2026[39m[33m,[39m [34m5[39m[33m,[39m [34m12[39m))[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/validar-pago.test.ts[2m > [22mvalidarPago — selección de tasa por fecha[2m > [22mpago del 13/05 usa 508.6004
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m tests/integration/validar-pago.test.ts:[2m56:23[22m[39m
+    [90m 54|[39m
+    [90m 55|[39m     const r = await validarComprobanteOcr('dummy', 10, '1234', 'A', 'B…
+    [90m 56|[39m     [34mexpect[39m(r[33m.[39misValid)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m 57|[39m     [34mexpect[39m(r[33m.[39mrawJson[33m.[39mtasaUsada)[33m.[39m[34mtoBeCloseTo[39m([34m508.6004[39m[33m,[39m [34m4[39m)[33m;[39m
+    [90m 58|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/validar-pago.test.ts[2m > [22mvalidarPago — selección de tasa por fecha[2m > [22mpago del 09/05 (sábado) usa la tasa del 08/05 (último día hábil previo)
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m tests/integration/validar-pago.test.ts:[2m65:23[22m[39m
+    [90m 63|[39m
+    [90m 64|[39m     const r = await validarComprobanteOcr('dummy', 10, '1234', 'A', 'B…
+    [90m 65|[39m     [34mexpect[39m(r[33m.[39misValid)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m 66|[39m     [34mexpect[39m([33m+[39mr[33m.[39mrawJson[33m.[39mfechaValorTasa[33m![39m)[33m.[39m[34mtoBe[39m([33m+[39m[34mfv[39m([34m2026[39m[33m,[39m [34m5[39m[33m,[39m [34m8[39m))[33m;[39m
+    [90m 67|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/validar-pago.test.ts[2m > [22mvalidarPago — selección de tasa por fecha[2m > [22mcandidato dentro de margen 5 Bs → válido
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m tests/integration/validar-pago.test.ts:[2m82:23[22m[39m
+    [90m 80|[39m
+    [90m 81|[39m     const r = await validarComprobanteOcr('dummy', 10, '1234', 'A', 'B…
+    [90m 82|[39m     [34mexpect[39m(r[33m.[39misValid)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   |[39m                       [31m^[39m
+    [90m 83|[39m     [34mexpect[39m(r[33m.[39mmontoDetectado)[33m.[39m[34mtoBe[39m([34m5045.0[39m)[33m;[39m
+    [90m 84|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/validar-pago.test.ts[2m > [22mvalidarPago — selección de tasa por fecha[2m > [22melige el menor candidato que cumple el umbral
+[31m[1mAssertionError[22m: expected 1234 to be 5050 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 5050[39m
+[31m+ 1234[39m
+
+[36m [2m❯[22m tests/integration/validar-pago.test.ts:[2m91:30[22m[39m
+    [90m 89|[39m
+    [90m 90|[39m     const r = await validarComprobanteOcr('dummy', 10, '1234', 'A', 'B…
+    [90m 91|[39m     [34mexpect[39m(r[33m.[39mmontoDetectado)[33m.[39m[34mtoBe[39m([34m5050.0[39m)[33m;[39m
+    [90m   |[39m                              [31m^[39m
+    [90m 92|[39m   })[33m;[39m
+    [90m 93|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/validar-pago.test.ts[2m > [22mvalidarPago — selección de tasa por fecha[2m > [22msin tasas en BD → isValid=false con motivo
+[31m[1mTypeError[22m: .toMatch() expects to receive a string, but got undefined[39m
+[36m [2m❯[22m tests/integration/validar-pago.test.ts:[2m101:29[22m[39m
+    [90m 99|[39m     const r = await validarComprobanteOcr('dummy', 10, '1234', 'A', 'B…
+    [90m100|[39m     [34mexpect[39m(r[33m.[39misValid)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m101|[39m     [34mexpect[39m(r[33m.[39mrawJson[33m.[39merror)[33m.[39m[34mtoMatch[39m([36m/Sin tasa/[39m)[33m;[39m
+    [90m   |[39m                             [31m^[39m
+    [90m102|[39m   })[33m;[39m
+    [90m103|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯[22m[39m
+

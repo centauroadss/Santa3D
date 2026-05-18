@@ -1,0 +1,25 @@
+
+> santa3d-contest@1.0.0 start
+> next start -H 0.0.0.0
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 543ms
+[BCV API] Ejecutando syncBcv() en el cron...
+⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
+⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.
+[BCV API] Error en cron: Error: BCV: conflicto de unicidad. fechaValor=2026-05-19 o tasa=517.9619 ya existen en id=26
+    at h (/app/.next/server/app/api/cron/bcv-scraper/route.js:1:3823)
+    at async p (/app/.next/server/app/api/cron/bcv-scraper/route.js:1:1351)
+    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/app/node_modules/next/dist/server/base-server.js:1496:28)
+    at async NextNodeServer.renderPageComponent (/app/node_modules/next/dist/server/base-server.js:1924:24)
+    at async NextNodeServer.renderToResponseImpl (/app/node_modules/next/dist/server/base-server.js:1962:32)
+⚠️ Ranking API: Instagram Credentials missing. Skipping Auto-Sync to prevent loop.

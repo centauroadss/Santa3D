@@ -133,10 +133,10 @@ export async function POST(req: Request) {
       bufferComprobante,
       costoUsd,
       referencia,
-      nombre,
-      apellido,
+      `${nombre} ${apellido}`.trim(),
       cedulaIdentidad,
-      { banco: bancoOrigenCodigo, cedula: cedulaPago, telefono: telefonoPago }
+      { banco: bancoOrigenCodigo, cedula: cedulaPago, telefono: telefonoPago },
+      undefined
     );
 
     if (!ocrResult.isValid) {
