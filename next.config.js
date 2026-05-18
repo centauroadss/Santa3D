@@ -24,6 +24,7 @@ const nextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: ['tesseract.js'],
   async headers() {
     return [
       {
