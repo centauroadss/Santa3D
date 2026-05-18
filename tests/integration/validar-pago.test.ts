@@ -32,6 +32,12 @@ vi.mock('tesseract.js', () => {
     }
 });
 
+vi.mock('@/lib/copa2026/ocr-preprocess', () => {
+    return {
+        preprocessForOcr: vi.fn().mockResolvedValue([{ variant: 'original', buffer: Buffer.from('dummy') }])
+    }
+});
+
 describe('validarPago — selección de tasa por fecha', () => {
   beforeEach(seed);
   afterAll(async () => { await prisma.tasaBcvHistorico.deleteMany({}); });

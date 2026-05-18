@@ -129,9 +129,8 @@ export async function POST(req: Request) {
 
     // ── OCR contra monto esperado ─────────────────────────────────────────
     const costoUsd = costoUsdPorCategoria(categoria);
-    const base64Image = bufferComprobante.toString('base64');
     const ocrResult = await validarComprobanteOcr(
-      base64Image,
+      bufferComprobante,
       costoUsd,
       referencia,
       nombre,

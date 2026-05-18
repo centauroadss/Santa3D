@@ -6,13 +6,13 @@ import { DateTime } from 'luxon';
 
 import * as Tesseract from 'tesseract.js';
 
-vi.mock('tesseract.js', () => {
-    return {
-        default: {
-            recognize: vi.fn()
-        }
-    }
-});
+vi.mock('tesseract.js', () => ({
+  default: { recognize: vi.fn() }
+}));
+
+vi.mock('@/lib/copa2026/ocr-preprocess', () => ({
+  preprocessForOcr: vi.fn().mockResolvedValue([{ variant: 'original', buffer: Buffer.from('dummy') }])
+}));
 
 const fv = (y: number, m: number, d: number) =>
   DateTime.fromObject({ year: y, month: m, day: d }, { zone: 'America/Caracas' })
