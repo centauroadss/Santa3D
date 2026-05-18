@@ -185,6 +185,10 @@ export async function validarComprobanteOcr(
     // Lógica de aceptación ESTRICTA (Solicitado por el auditor):
     // El OCR debe encontrar el monto ideal, O la referencia/cédula.
     // Si no encuentra nada de eso, rechazamos la validación para evitar fraude.
+    
+    const conformidadOk = bancoReceptorOk && cedulaReceptorOk && telefonoReceptorOk;
+    const conformidadText = conformidadOk ? "Coinciden banco, cédula y teléfono del receptor." : null;
+
     if (candidatoIdeal !== undefined || referenciaEncontrada || cedulaEncontrada) {
         return {
             isValid: true,
@@ -198,7 +202,10 @@ export async function validarComprobanteOcr(
                 tasaUsada: tasaBcv,
                 fechaValorTasa: bcvRecord.fechaValor,
                 fechaPagoNormalizada: fechaPago,
-                montoEsperadoCalculado: montoEsperadoBs
+                montoEsperadoCalculado: montoEsperadoBs,
+                montoDetectado: candidatoIdeal || (candidatos.length > 0 ? Math.max(...candidatos) : null),
+                conceptoExtraido: conceptoExtraido,
+                conformidad: conformidadText
             },
             confidence: confidence,
             fechaExtraida,
@@ -221,7 +228,10 @@ export async function validarComprobanteOcr(
             tasaUsada: tasaBcv,
             fechaValorTasa: bcvRecord.fechaValor,
             fechaPagoNormalizada: fechaPago,
-            montoEsperadoCalculado: montoEsperadoBs
+            montoEsperadoCalculado: montoEsperadoBs,
+            montoDetectado: candidatos.length > 0 ? Math.max(...candidatos) : null,
+            conceptoExtraido: conceptoExtraido,
+            conformidad: conformidadText
         },
         confidence: confidence,
         fechaExtraida,
@@ -240,7 +250,12 @@ export async function validarComprobanteOcr(
         montoDetectado: null,
         referenciaDetectada: null,
         bancoDetectado: null,
-        rawJson: { error: "Fallo técnico o timeout al leer el comprobante con OCR local. Pasando a revisión manual." },
+        rawJson: { 
+            error: "Fallo técnico o timeout al leer el comprobante con OCR local. Pasando a revisión manual.",
+            montoDetectado: null,
+            conceptoExtraido: null,
+            conformidad: null
+        },
         confidence: 0
     };
   }
