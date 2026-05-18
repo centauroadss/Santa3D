@@ -40,6 +40,11 @@ interface InscripcionData {
     bancoOrigen: string;
     montoBs: string | number;
     concepto: string;
+    ocrReferenciaDetectada: string | null;
+    ocrBancoEmisorCodigo: string | null;
+    ocrMontoDetectadoBs: number | null;
+    ocrConceptoExtraido: string | null;
+    ocrConformidadGeneral: boolean;
     videos: VideoData[];
 }
 
@@ -326,27 +331,27 @@ export default function AdminInscripcionesPage() {
                                         </div>
                                         <div className="mt-2 text-[10px] bg-gray-50 p-2 rounded border border-gray-100 text-left w-full max-w-[180px] mx-auto">
                                             <div className="font-bold text-gray-700 mb-1 border-b border-gray-200 pb-1">Datos de Captura</div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.referencia}>
-                                                <span className="font-bold text-gray-400 mr-1">Ref:</span>{insc.referencia || 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrReferenciaDetectada || insc.referencia}>
+                                                <span className="font-bold text-gray-400 mr-1">Ref:</span>{typeof insc.ocrReferenciaDetectada === 'string' && insc.ocrReferenciaDetectada.trim().length > 0 ? insc.ocrReferenciaDetectada : 'N/D'}
                                             </div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.bancoOrigen || 'N/D'}>
-                                                <span className="font-bold text-gray-400 mr-1">Banco:</span>{insc.bancoOrigen || 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrBancoEmisorCodigo || insc.bancoOrigen}>
+                                                <span className="font-bold text-gray-400 mr-1">Banco:</span>{typeof insc.ocrBancoEmisorCodigo === 'string' && insc.ocrBancoEmisorCodigo.trim().length > 0 ? insc.ocrBancoEmisorCodigo : 'N/D'}
                                             </div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.montoDetectado ? `${insc.ocrData.montoDetectado} Bs` : 'N/D'}>
-                                                <span className="font-bold text-gray-400 mr-1">Monto:</span>{insc.ocrData?.montoDetectado ? `${insc.ocrData.montoDetectado} Bs` : 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={typeof insc.ocrMontoDetectadoBs === 'number' ? `Bs ${insc.ocrMontoDetectadoBs.toFixed(2)}` : 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Monto:</span>{typeof insc.ocrMontoDetectadoBs === 'number' ? `Bs ${insc.ocrMontoDetectadoBs.toFixed(2)}` : 'N/D'}
                                             </div>
-                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrData?.conceptoExtraido || 'N/D'}>
-                                                <span className="font-bold text-gray-400 mr-1">Conc:</span>{insc.ocrData?.conceptoExtraido || 'N/D'}
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrConceptoExtraido || insc.concepto || 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Conc:</span>{typeof insc.ocrConceptoExtraido === 'string' && insc.ocrConceptoExtraido.trim().length > 0 ? insc.ocrConceptoExtraido : 'N/D'}
                                             </div>
-                                            {insc.ocrData?.conformidad ? (
-                                                <div className="mt-2 text-green-700 font-bold bg-green-100 p-1 rounded text-center" title={insc.ocrData.conformidad}>
+                                            {insc.ocrConformidadGeneral ? (
+                                                <div className="mt-2 text-green-700 font-bold bg-green-100 p-1 rounded text-center" title="Conformidad General">
                                                     ✅ Conformidad
                                                 </div>
-                                            ) : insc.ocrData ? (
+                                            ) : (
                                                 <div className="mt-2 text-red-600 font-bold bg-red-100 p-1 rounded text-center" title="Banco, Cédula o Teléfono del receptor no coinciden con la Configuración Global">
                                                     ⚠️ No Conformidad
                                                 </div>
-                                            ) : null}
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 align-top">

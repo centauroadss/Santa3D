@@ -268,6 +268,28 @@ model PagoMovil {
   estatusPago         EstatusPago         @default(EN_REVISION)
   concepto            String              @db.VarChar(255)
   conceptoValidado    Boolean             @default(false)
+  
+  // ── NUEVOS campos OCR (top-level, no en JSON) ─────────────
+  ocrReferenciaDetectada     String?  @db.VarChar(20)
+  ocrMontoDetectadoBs        Decimal? @db.Decimal(18, 2)   // null si no leído (NO 0)
+  ocrConceptoExtraido        String?  @db.VarChar(500)
+  ocrFechaExtraida           DateTime? @db.Date
+  ocrCedulaReceptorDetectada String?  @db.VarChar(20)
+  ocrTelefonoDestinoDetectado String? @db.VarChar(15)
+  ocrBancoEmisorNombre       String?  @db.VarChar(50)
+  ocrBancoEmisorCodigo       String?  @db.VarChar(10)
+
+  // ── NUEVOS flags de validación cruzada ───────────────────
+  ocrReferenciaOk            Boolean  @default(false)
+  ocrBancoOk                 Boolean  @default(false)
+  ocrCedulaReceptorOk        Boolean  @default(false)
+  ocrMontoOk                 Boolean  @default(false)
+  ocrConceptoOk              Boolean  @default(false)
+  ocrConformidadGeneral      Boolean  @default(false)
+
+  // ── Metadata OCR ─────────────────────────────────────────
+  ocrVariantUsed             String?  @db.VarChar(50)      // "binary" | "greyscale-normalized" | "raw-fallback"
+
   createdAt           DateTime            @default(now())
 
   @@map("pagos_movil")

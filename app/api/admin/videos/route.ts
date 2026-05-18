@@ -85,6 +85,11 @@ export async function GET(request: NextRequest) {
         bancoOrigen: insc.pago?.bancoOrigenCodigo || '-',
         montoBs: insc.pago?.montoCapturadoBs || '-',
         concepto: insc.pago?.concepto || '-',
+        ocrReferenciaDetectada: insc.pago?.ocrReferenciaDetectada || null,
+        ocrBancoEmisorCodigo: insc.pago?.ocrBancoEmisorCodigo || null,
+        ocrMontoDetectadoBs: insc.pago?.ocrMontoDetectadoBs ? Number(insc.pago.ocrMontoDetectadoBs) : null,
+        ocrConceptoExtraido: insc.pago?.ocrConceptoExtraido || null,
+        ocrConformidadGeneral: insc.pago?.ocrConformidadGeneral || false,
         videos: formattedVideos
       };
     }));
