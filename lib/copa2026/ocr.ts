@@ -57,11 +57,24 @@ export interface ValidacionResult {
   rawJson: any;
 }
 
+export function normalizeImageInput(input: Buffer | string | Uint8Array): Buffer {
+  if (Buffer.isBuffer(input)) return input;
+  if (input instanceof Uint8Array) return Buffer.from(input);
+  if (typeof input === 'string') {
+    const stripped = input.replace(/^data:image\/[\w+.-]+;base64,/i, '').trim();
+    if (!/^[A-Za-z0-9+/=\s]+$/.test(stripped)) {
+      throw new Error(`Image input no es Buffer ni base64 válido. Recibido: "${input.slice(0, 30)}..."`);
+    }
+    return Buffer.from(stripped, 'base64');
+  }
+  throw new Error(`Image input tipo no soportado: ${typeof input}`);
+}
+
 /**
- * Función principal de validación de comprobante.
+ * Función principal que orquesta el OCR y la validación cruzada.
  *
- * @param imageBuffer   Buffer crudo de la imagen del comprobante
- * @param costoUsd      Monto USD esperado (5 o 10 según categoría)
+ * @param imageInput    Imagen del pago a analizar (Buffer, string base64 o Uint8Array)
+ * @param costoUsd      Monto esperado en dólares para la categoría
  * @param referenciaEsperada  Referencia que el participante reportó
  * @param nombreParticipante  Nombre+apellido para validar concepto
  * @param cedulaParticipante  Cédula para validar concepto
@@ -69,7 +82,7 @@ export interface ValidacionResult {
  * @param fechaPago     Fecha del pago (opcional; default hoy Caracas)
  */
 export async function validarComprobanteOcr(
-  imageBuffer: Buffer,
+  imageInput: Buffer | string | Uint8Array,
   costoUsd: number,
   referenciaEsperada: string,
   nombreParticipante: string,
@@ -77,6 +90,8 @@ export async function validarComprobanteOcr(
   configPago: { banco?: string; cedula?: string; telefono?: string },
   fechaPago: Date = new Date()
 ): Promise<ValidacionResult> {
+
+  const imageBuffer = normalizeImageInput(imageInput);
 
   // ─── 1. Preprocesar la imagen (DOS variantes) ────────────────────────
   let textBest = '';

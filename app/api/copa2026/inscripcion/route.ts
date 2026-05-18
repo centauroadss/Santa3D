@@ -140,11 +140,10 @@ export async function POST(req: Request) {
     );
 
     if (!ocrResult.isValid) {
+      console.error('[OCR] Falla detallada:', ocrResult.rawJson?.mensaje, ocrResult.rawJson);
       return NextResponse.json(
         {
-          error: 'Validación OCR falló',
-          detalle: ocrResult.rawJson?.mensaje ?? 'Monto no coincide con lo esperado',
-          ocr: ocrResult.rawJson,
+          error: 'No se pudo validar el comprobante. Verifique que la imagen sea legible y el pago coincida.',
         },
         { status: 400 }
       );
