@@ -141,7 +141,14 @@ export async function validarComprobanteOcr(
   const fields: OcrFields = extractAllFields(textBest);
 
   // ─── 3. Tasa BCV vigente para la fecha del pago ─────────────────────
-  const fechaPagoCaracas = DateTime.fromJSDate(fechaPago).setZone(TZ).startOf('day').toJSDate();
+  let finalFechaPago = fechaPago;
+  if (fields.fechaPago) {
+    const parsed = new Date(fields.fechaPago + 'T12:00:00Z');
+    if (!isNaN(parsed.getTime())) {
+      finalFechaPago = parsed;
+    }
+  }
+  const fechaPagoCaracas = DateTime.fromJSDate(finalFechaPago).setZone(TZ).startOf('day').toJSDate();
   const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
     where: { fecha: { lte: fechaPagoCaracas } },
     orderBy: { fecha: 'desc' },

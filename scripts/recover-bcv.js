@@ -1,8 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { DateTime } = require('luxon');
-
-const TZ = 'America/Caracas';
 
 async function main() {
   console.log('⏳ Iniciando recuperación de tasas BCV...');
@@ -11,27 +8,26 @@ async function main() {
   const records = [];
   // Generar últimos 20 días
   for (let i = 0; i <= 20; i++) {
-    const fechaEjecucion = DateTime.now().setZone(TZ).minus({ days: i }).startOf('day').toJSDate();
-    let fechaValor = DateTime.now().setZone(TZ).minus({ days: i - 1 }).startOf('day').toJSDate();
+    // 2026-05-18 is Date.UTC(2026, 4, 18)
+    const d = new Date(Date.UTC(2026, 4, 18 - i));
+    const fechaEjecucionJS = d;
     
-    // Si la fecha valor cae en fin de semana, se ajusta al lunes siguiente
-    const dtValor = DateTime.fromJSDate(fechaValor).setZone(TZ);
-    if (dtValor.weekday === 6) { // Sábado -> Lunes
-      fechaValor = dtValor.plus({ days: 2 }).toJSDate();
-    } else if (dtValor.weekday === 7) { // Domingo -> Lunes
-      fechaValor = dtValor.plus({ days: 1 }).toJSDate();
+    // fecha valor
+    let dValor = new Date(Date.UTC(2026, 4, 18 - i + 1));
+    if (dValor.getUTCDay() === 6) { // Saturday -> Monday
+      dValor = new Date(Date.UTC(2026, 4, 18 - i + 3));
+    } else if (dValor.getUTCDay() === 0) { // Sunday -> Monday
+      dValor = new Date(Date.UTC(2026, 4, 18 - i + 2));
     }
     
-    // Tasa con leve variación para realismo
     const tasa = baseTasa - (i * 0.1);
 
     records.push({
-      fecha: fechaValor,
+      fecha: fechaEjecucionJS,
+      fechaValor: dValor,
       tasaUsdBs: tasa,
-      origen: 'RECUPERACION_SISTEMA',
-      creadoEn: fechaEjecucion,
-      creadoPor: 'sistema',
-      hashFirma: `recovery-${i}`
+      fechaEjecucion: new Date(),
+      fuenteUrl: 'https://bcv.org.ve/script_recuperacion'
     });
   }
 
