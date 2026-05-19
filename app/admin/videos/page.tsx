@@ -67,6 +67,7 @@ export default function AdminInscripcionesPage() {
     // Playing
     const [playingVideo, setPlayingVideo] = useState<string | null>(null);
     const [playingImage, setPlayingImage] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
     // Editing State
