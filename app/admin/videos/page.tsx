@@ -349,7 +349,7 @@ export default function AdminInscripcionesPage() {
                                                     <UserCircle size={24} />
                                                 </div>
                                             )}
-                                            <div title={insc.biografia || 'Sin biografía'}>
+                                            <div className="relative group">
                                                 <div className="font-bold text-gray-900 leading-tight flex items-center gap-2">
                                                     {insc.participantName}
                                                     <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider ${insc.categoria === 'RENDER' ? 'bg-red-100 text-red-700' : insc.categoria === 'IA' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
@@ -370,6 +370,12 @@ export default function AdminInscripcionesPage() {
                                                         }`}>
                                                         {insc.estatusInscripcion}
                                                     </span>
+                                                </div>
+                                                {/* Biografía Popover */}
+                                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                                                    <div className="font-bold border-b border-gray-100 pb-2 mb-2 text-brand-purple">Biografía del Participante</div>
+                                                    <div className="whitespace-pre-wrap">{insc.biografia || 'Sin biografía cargada.'}</div>
+                                                    <div className="absolute -bottom-2 left-4 w-4 h-4 bg-white border-b border-r border-gray-200 transform rotate-45"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -456,27 +462,23 @@ export default function AdminInscripcionesPage() {
                                                                     <span className="text-gray-400 font-mono text-[10px] mt-0.5">Subido: {safeFormatDate(video.uploadedAt)}</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex justify-between text-[9px] text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-100 mb-2">
-                                                                <span title="Resolución Esperada">Exp: 1024x2048</span>
-                                                                <span title="FPS Esperado">≥25 fps</span>
-                                                                <span title="Duración Esperada">~30s</span>
+                                                            <div className="grid grid-cols-4 gap-2 text-[10px] text-black font-bold font-mono bg-gray-200 px-2 py-1.5 rounded border border-gray-300 mb-2 text-center shadow-sm">
+                                                                <span title="Resolución Esperada">1024x2048</span>
+                                                                <span title="FPS Esperado">30 fps</span>
+                                                                <span title="Duración Esperada">30s</span>
                                                                 <span title="Formato Esperado">mp4</span>
                                                             </div>
                                                             <div className="grid grid-cols-4 gap-2 font-mono">
-                                                                <div className={`px-2 py-1 border rounded text-center ${isResOk ? okClass : warnClass}`} title="Resolución Recibida">
-                                                                    <div className="text-[8px] uppercase text-gray-500 mb-0.5 leading-none">Res</div>
+                                                                <div className={`px-2 py-1 border rounded text-center flex flex-col justify-center ${isResOk ? okClass : warnClass}`} title="Resolución Recibida">
                                                                     {video.resolution || 'N/A'}
                                                                 </div>
-                                                                <div className={`px-2 py-1 border rounded text-center ${isFpsOk ? okClass : warnClass}`} title="FPS Recibidos">
-                                                                    <div className="text-[8px] uppercase text-gray-500 mb-0.5 leading-none">FPS</div>
-                                                                    {video.fps || 'N/A'}
+                                                                <div className={`px-2 py-1 border rounded text-center flex flex-col justify-center ${isFpsOk ? okClass : warnClass}`} title="FPS Recibidos">
+                                                                    {video.fps ? Math.round(parseFloat(video.fps as string)) : 'N/A'}
                                                                 </div>
-                                                                <div className={`px-2 py-1 border rounded text-center ${isDurOk ? okClass : warnClass}`} title="Duración Recibida">
-                                                                    <div className="text-[8px] uppercase text-gray-500 mb-0.5 leading-none">Dur</div>
+                                                                <div className={`px-2 py-1 border rounded text-center flex flex-col justify-center ${isDurOk ? okClass : warnClass}`} title="Duración Recibida">
                                                                     {formatDuration(video.duration)}
                                                                 </div>
-                                                                <div className={`px-2 py-1 border rounded text-center ${isFormatOk ? okClass : warnClass}`} title="Formato Recibido">
-                                                                    <div className="text-[8px] uppercase text-gray-500 mb-0.5 leading-none">Formato</div>
+                                                                <div className={`px-2 py-1 border rounded text-center flex flex-col justify-center ${isFormatOk ? okClass : warnClass}`} title="Formato Recibido">
                                                                     {video.format || 'N/A'}
                                                                 </div>
                                                             </div>
