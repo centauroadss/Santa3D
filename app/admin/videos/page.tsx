@@ -434,16 +434,27 @@ export default function AdminInscripcionesPage() {
 
                                                     return (
                                                         <div key={video.id} className="border border-gray-100 rounded-lg p-2 bg-white text-xs">
-                                                            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-50">
-                                                                <button
-                                                                    onClick={() => setPlayingVideo(video.url)}
-                                                                    disabled={!video.url}
-                                                                    className={`w-6 h-6 flex items-center justify-center rounded-full ${video.url ? 'bg-brand-purple text-white hover:bg-brand-purple/80' : 'bg-gray-100 text-gray-400'}`}
+                                                            <div className="flex items-center gap-3 mb-2 pb-2 border-b border-gray-50">
+                                                                <div 
+                                                                    onClick={() => video.url && setPlayingVideo(video.url)}
+                                                                    className={`relative w-24 h-14 rounded overflow-hidden flex-shrink-0 border border-gray-200 bg-black flex items-center justify-center ${video.url ? 'cursor-pointer group' : 'opacity-50 cursor-not-allowed'}`}
+                                                                    title={video.url ? "Reproducir Video" : "Video no disponible"}
                                                                 >
-                                                                    <Play size={10} className="ml-0.5" />
-                                                                </button>
-                                                                <span className="font-bold text-gray-700">{video.categoria}</span>
-                                                                <span className="text-gray-400 font-mono ml-auto">Subido: {safeFormatDate(video.uploadedAt)}</span>
+                                                                    {video.url ? (
+                                                                        <>
+                                                                            <video src={video.url} className="w-full h-full object-cover opacity-60 group-hover:opacity-90 transition-opacity" preload="metadata" muted playsInline />
+                                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
+                                                                                <Play size={20} className="text-white drop-shadow-md transition-transform group-hover:scale-110" fill="currentColor" />
+                                                                            </div>
+                                                                        </>
+                                                                    ) : (
+                                                                        <Play size={20} className="text-gray-500" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex flex-col flex-1">
+                                                                    <span className="font-bold text-gray-800 text-sm">{video.categoria}</span>
+                                                                    <span className="text-gray-400 font-mono text-[10px] mt-0.5">Subido: {safeFormatDate(video.uploadedAt)}</span>
+                                                                </div>
                                                             </div>
                                                             <div className="grid grid-cols-4 gap-2 font-mono">
                                                                 <div className={`px-2 py-1 border rounded text-center ${isResOk ? okClass : warnClass}`}>

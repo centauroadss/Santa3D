@@ -39,9 +39,13 @@ export async function GET(request: NextRequest) {
       const formattedVideos = await Promise.all(insc.videos.map(async (v) => {
           let playUrl = null;
           if (v.rutaS3) {
-              try {
-                  playUrl = await StorageService.getSignedVideoUrl(v.rutaS3);
-              } catch (err) {}
+              if (v.rutaS3.startsWith('http')) {
+                  playUrl = v.rutaS3;
+              } else {
+                  try {
+                      playUrl = await StorageService.getSignedVideoUrl(v.rutaS3);
+                  } catch (err) {}
+              }
           }
           
           let categoriaVideo = insc.categoria;

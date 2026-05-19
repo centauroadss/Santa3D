@@ -1,0 +1,31 @@
+STDOUT:
+
+> santa3d-contest@1.0.0 start
+> next start -H 0.0.0.0
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 468ms
+
+STDERR:
+Error confirming video upload: PrismaClientUnknownRequestError: 
+Invalid `prisma.inscripcionCopa2026.update()` invocation:
+
+
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(Server(MysqlError { code: 1265, message: "Data truncated for column 'estatusInscripcion' at row 1", state: "01000" })), transient: false })
+    at ei.handleRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:7458)
+    at ei.handleAndLogRequestError (/app/node_modules/@prisma/client/runtime/library.js:121:6593)
+    at ei.request (/app/node_modules/@prisma/client/runtime/library.js:121:6300)
+    at async a (/app/node_modules/@prisma/client/runtime/library.js:130:9551)
+    at async u (/app/.next/server/app/api/copa2026/video-upload/confirm/route.js:1:2774)
+    at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:38411
+    at async e_.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:27880)
+    at async e_.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:39943)
+    at async doRender (/app/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/app/node_modules/next/dist/server/base-server.js:1588:28) {
+  clientVersion: '6.19.1'
+}

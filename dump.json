@@ -1,0 +1,122 @@
+[
+  {
+    "id": 95,
+    "fecha": "2026-05-18T00:00:00.000Z",
+    "fechaValor": "2026-05-19T00:00:00.000Z",
+    "tasaUsdBs": "517.9619",
+    "fechaEjecucion": "2026-05-18T21:06:08.014Z",
+    "fuenteUrl": "https://www.bcv.org.ve/"
+  },
+  {
+    "id": 120,
+    "fecha": "2026-05-14T00:00:00.000Z",
+    "fechaValor": "2026-05-15T00:00:00.000Z",
+    "tasaUsdBs": "515.18",
+    "fechaEjecucion": "2026-05-19T09:59:42.782Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 121,
+    "fecha": "2026-05-13T00:00:00.000Z",
+    "fechaValor": "2026-05-14T00:00:00.000Z",
+    "tasaUsdBs": "510.7873",
+    "fechaEjecucion": "2026-05-19T09:59:42.822Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 122,
+    "fecha": "2026-05-12T00:00:00.000Z",
+    "fechaValor": "2026-05-13T00:00:00.000Z",
+    "tasaUsdBs": "508.6004",
+    "fechaEjecucion": "2026-05-19T09:59:42.827Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 123,
+    "fecha": "2026-05-11T00:00:00.000Z",
+    "fechaValor": "2026-05-12T00:00:00.000Z",
+    "tasaUsdBs": "504.9146",
+    "fechaEjecucion": "2026-05-19T09:59:42.831Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 124,
+    "fecha": "2026-05-08T00:00:00.000Z",
+    "fechaValor": "2026-05-11T00:00:00.000Z",
+    "tasaUsdBs": "500.4606",
+    "fechaEjecucion": "2026-05-19T09:59:42.835Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 125,
+    "fecha": "2026-05-07T00:00:00.000Z",
+    "fechaValor": "2026-05-08T00:00:00.000Z",
+    "tasaUsdBs": "499.8608",
+    "fechaEjecucion": "2026-05-19T09:59:42.839Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 126,
+    "fecha": "2026-05-06T00:00:00.000Z",
+    "fechaValor": "2026-05-07T00:00:00.000Z",
+    "tasaUsdBs": "496.8301",
+    "fechaEjecucion": "2026-05-19T09:59:42.844Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 127,
+    "fecha": "2026-05-05T00:00:00.000Z",
+    "fechaValor": "2026-05-06T00:00:00.000Z",
+    "tasaUsdBs": "493.3765",
+    "fechaEjecucion": "2026-05-19T09:59:42.847Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 128,
+    "fecha": "2026-05-04T00:00:00.000Z",
+    "fechaValor": "2026-05-05T00:00:00.000Z",
+    "tasaUsdBs": "490.0442",
+    "fechaEjecucion": "2026-05-19T09:59:42.850Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 129,
+    "fecha": "2026-04-30T00:00:00.000Z",
+    "fechaValor": "2026-05-04T00:00:00.000Z",
+    "tasaUsdBs": "489.5547",
+    "fechaEjecucion": "2026-05-19T09:59:42.854Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 130,
+    "fecha": "2026-04-29T00:00:00.000Z",
+    "fechaValor": "2026-04-30T00:00:00.000Z",
+    "tasaUsdBs": "487.1192",
+    "fechaEjecucion": "2026-05-19T09:59:42.857Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 131,
+    "fecha": "2026-04-28T00:00:00.000Z",
+    "fechaValor": "2026-04-29T00:00:00.000Z",
+    "tasaUsdBs": "486.1955",
+    "fechaEjecucion": "2026-05-19T09:59:42.860Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 118,
+    "fecha": "2026-04-27T00:00:00.000Z",
+    "fechaValor": "2026-04-28T00:00:00.000Z",
+    "tasaUsdBs": "485.2251",
+    "fechaEjecucion": "2026-05-19T09:38:29.458Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  },
+  {
+    "id": 119,
+    "fecha": "2026-04-24T00:00:00.000Z",
+    "fechaValor": "2026-04-27T00:00:00.000Z",
+    "tasaUsdBs": "484.7074",
+    "fechaEjecucion": "2026-05-19T09:38:29.460Z",
+    "fuenteUrl": "EXCEL_IMPORT"
+  }
+]

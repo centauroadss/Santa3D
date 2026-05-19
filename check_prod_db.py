@@ -1,5 +1,4 @@
 import paramiko
-import json
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -23,15 +22,9 @@ sftp.close()
 client.exec_command('docker cp /tmp/check_db.js $(docker ps -q --filter "name=project_copa2026.1"):/app/check_db.js')
 stdin, stdout, stderr = client.exec_command('docker exec $(docker ps -q --filter "name=project_copa2026.1") node /app/check_db.js')
 
-output = stdout.read().decode('utf-8')
-
-try:
-    data = json.loads(output)
-    for row in data:
-        if '2026-05-06' in row.get('fechaValor', '') or '2026-05-06' in row.get('fecha', ''):
-            print("FOUND:", row)
-except Exception as e:
-    print("Error parsing:", e)
-    print("Output was:", output[:500])
+print("STDOUT:")
+print(stdout.read().decode('utf-8'))
+print("STDERR:")
+print(stderr.read().decode('utf-8'))
 
 client.close()
