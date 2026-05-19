@@ -236,7 +236,34 @@ export default function VideoUploadClient({ tokenVideo, categoria }: { tokenVide
                             )}
                         </div>
                         {meta.duration && (
-                            <p className="text-center text-xs text-green-400 font-medium">✅ Validado: {meta.resolution} @ {meta.duration.toFixed(1)}s</p>
+                            <div className="mt-4 bg-[#111] rounded-xl border border-white/10 overflow-hidden text-sm">
+                                <table className="w-full text-left text-gray-300">
+                                    <thead className="bg-white/5 text-white text-xs uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-4 py-3 font-medium">Dato</th>
+                                            <th className="px-4 py-3 font-medium">Esperado</th>
+                                            <th className="px-4 py-3 font-medium">Determinado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5 bg-black/40">
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-white/80">Resolución</td>
+                                            <td className="px-4 py-3 font-mono text-xs">1024x2048</td>
+                                            <td className={`px-4 py-3 font-mono text-xs font-bold ${meta.resolution === '1024x2048' ? 'text-green-400' : 'text-yellow-400'}`}>{meta.resolution}</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-white/80">Duración</td>
+                                            <td className="px-4 py-3 font-mono text-xs">25s - 30s</td>
+                                            <td className={`px-4 py-3 font-mono text-xs font-bold ${(meta.duration >= 25 && meta.duration <= 31) ? 'text-green-400' : 'text-yellow-400'}`}>{meta.duration.toFixed(1)}s</td>
+                                        </tr>
+                                        <tr className="hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-white/80">Formato</td>
+                                            <td className="px-4 py-3 font-mono text-xs">video/mp4</td>
+                                            <td className={`px-4 py-3 font-mono text-xs font-bold ${meta.file.type === 'video/mp4' ? 'text-green-400' : 'text-yellow-400'}`}>{meta.file.type}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                         {isUploading && (
                             <p className="text-center text-xs text-brand-purple font-bold mt-2">Subiendo... {meta.uploadProgress}%</p>

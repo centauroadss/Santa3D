@@ -28,8 +28,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 });
         }
 
-        if (inscripcion.estatusInscripcion === 'COMPLETADO') {
-            return NextResponse.json({ error: 'El video ya fue cargado' }, { status: 400 });
+        const deadline = new Date('2026-06-05T23:59:59Z');
+        if (inscripcion.estatusInscripcion === 'COMPLETADO' && new Date() > deadline) {
+            return NextResponse.json({ error: 'El video ya fue cargado y el plazo de reemplazo venció' }, { status: 400 });
         }
 
         const bucket = process.env.DO_SPACES_BUCKET_VIDEOS || 'copa2026-videos';
