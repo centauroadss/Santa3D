@@ -199,6 +199,7 @@ enum EstatusInscripcion {
   PENDIENTE
   APROBADO
   RECHAZADO
+  COMPLETADO
 }
 
 enum EstatusToken {
