@@ -44,6 +44,7 @@ interface InscripcionData {
     ocrBancoEmisorCodigo: string | null;
     ocrMontoDetectadoBs: number | null;
     ocrConceptoExtraido: string | null;
+    ocrFechaExtraida: string | null;
     ocrConformidadGeneral: boolean;
     videos: VideoData[];
 }
@@ -342,6 +343,9 @@ export default function AdminInscripcionesPage() {
                                             </div>
                                             <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrConceptoExtraido || insc.concepto || 'N/D'}>
                                                 <span className="font-bold text-gray-400 mr-1">Conc:</span>{typeof insc.ocrConceptoExtraido === 'string' && insc.ocrConceptoExtraido.trim().length > 0 ? insc.ocrConceptoExtraido : 'N/D'}
+                                            </div>
+                                            <div className="text-gray-600 font-mono leading-tight mt-1 truncate" title={insc.ocrFechaExtraida ? new Date(insc.ocrFechaExtraida).toLocaleDateString() : 'N/D'}>
+                                                <span className="font-bold text-gray-400 mr-1">Fecha:</span>{insc.ocrFechaExtraida ? insc.ocrFechaExtraida.split('T')[0].split('-').reverse().join('/') : 'N/D'}
                                             </div>
                                             {insc.ocrConformidadGeneral ? (
                                                 <div className="mt-2 text-green-700 font-bold bg-green-100 p-1 rounded text-center" title="Conformidad General">

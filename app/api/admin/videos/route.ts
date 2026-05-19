@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
         ocrBancoEmisorCodigo: insc.pago?.ocrBancoEmisorCodigo || null,
         ocrMontoDetectadoBs: insc.pago?.ocrMontoDetectadoBs ? Number(insc.pago.ocrMontoDetectadoBs) : null,
         ocrConceptoExtraido: insc.pago?.ocrConceptoExtraido || null,
+        ocrFechaExtraida: insc.pago?.ocrFechaExtraida ? insc.pago.ocrFechaExtraida.toISOString() : null,
         ocrConformidadGeneral: insc.pago?.ocrConformidadGeneral || false,
         videos: formattedVideos
       };
