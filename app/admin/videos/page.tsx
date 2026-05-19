@@ -141,7 +141,12 @@ export default function AdminInscripcionesPage() {
                     referencia: insc.referencia || '',
                     montoCapturadoBs: insc.montoBs || '',
                     concepto: insc.concepto || '',
-                    estatusPago: insc.estatusPago || 'EN_REVISION'
+                    estatusPago: insc.estatusPago || 'EN_REVISION',
+                    ocrBancoEmisorCodigo: insc.ocrBancoEmisorCodigo || '',
+                    ocrReferenciaDetectada: insc.ocrReferenciaDetectada || '',
+                    ocrMontoDetectadoBs: insc.ocrMontoDetectadoBs?.toString() || '',
+                    ocrConceptoExtraido: insc.ocrConceptoExtraido || '',
+                    ocrFechaExtraida: insc.ocrFechaExtraida ? new Date(insc.ocrFechaExtraida).toISOString().slice(0, 16) : ''
                 }
             });
         }
@@ -702,6 +707,47 @@ export default function AdminInscripcionesPage() {
                                         <option value="VALIDADO">VALIDADO</option>
                                         <option value="RECHAZADO">RECHAZADO</option>
                                     </select>
+                                </div>
+                                
+                                <h3 className="text-lg font-bold text-orange-600 mt-6 pt-4 border-t border-gray-200">Datos Extraídos por OCR</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">OCR Banco Emisor</label>
+                                        <Input 
+                                            value={editFormData.pago?.ocrBancoEmisorCodigo} 
+                                            onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, ocrBancoEmisorCodigo: e.target.value}})}
+                                            className="w-full text-sm font-mono border-orange-200 focus:ring-orange-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">OCR Referencia</label>
+                                        <Input 
+                                            value={editFormData.pago?.ocrReferenciaDetectada} 
+                                            onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, ocrReferenciaDetectada: e.target.value}})}
+                                            className="w-full text-sm font-mono border-orange-200 focus:ring-orange-500"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">OCR Monto Bs</label>
+                                        <Input 
+                                            type="number"
+                                            step="0.01"
+                                            value={editFormData.pago?.ocrMontoDetectadoBs} 
+                                            onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, ocrMontoDetectadoBs: e.target.value}})}
+                                            className="w-full text-sm font-mono border-orange-200 focus:ring-orange-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">OCR Fecha</label>
+                                        <Input 
+                                            type="datetime-local"
+                                            value={editFormData.pago?.ocrFechaExtraida} 
+                                            onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, ocrFechaExtraida: e.target.value}})}
+                                            className="w-full text-sm font-mono border-orange-200 focus:ring-orange-500"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

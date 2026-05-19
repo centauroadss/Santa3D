@@ -121,15 +121,24 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     });
 
     if (body.pago) {
+        const updateData: any = {
+            bancoOrigenCodigo: body.pago.bancoOrigenCodigo,
+            referencia: body.pago.referencia,
+            montoCapturadoBs: body.pago.montoCapturadoBs ? parseFloat(body.pago.montoCapturadoBs) : undefined,
+            concepto: body.pago.concepto,
+            estatusPago: body.pago.estatusPago,
+        };
+        
+        // Add OCR fields if they are provided
+        if (body.pago.ocrBancoEmisorCodigo !== undefined) updateData.ocrBancoEmisorCodigo = body.pago.ocrBancoEmisorCodigo;
+        if (body.pago.ocrReferenciaDetectada !== undefined) updateData.ocrReferenciaDetectada = body.pago.ocrReferenciaDetectada;
+        if (body.pago.ocrMontoDetectadoBs !== undefined) updateData.ocrMontoDetectadoBs = body.pago.ocrMontoDetectadoBs ? parseFloat(body.pago.ocrMontoDetectadoBs) : null;
+        if (body.pago.ocrConceptoExtraido !== undefined) updateData.ocrConceptoExtraido = body.pago.ocrConceptoExtraido;
+        if (body.pago.ocrFechaExtraida !== undefined) updateData.ocrFechaExtraida = body.pago.ocrFechaExtraida ? new Date(body.pago.ocrFechaExtraida) : null;
+
         await prisma.pagoMovil.update({
             where: { inscripcionId: id },
-            data: {
-                bancoOrigenCodigo: body.pago.bancoOrigenCodigo,
-                referencia: body.pago.referencia,
-                montoCapturadoBs: body.pago.montoCapturadoBs ? parseFloat(body.pago.montoCapturadoBs) : undefined,
-                concepto: body.pago.concepto,
-                estatusPago: body.pago.estatusPago,
-            }
+            data: updateData
         });
     }
 
