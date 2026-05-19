@@ -149,19 +149,23 @@ export async function syncBcv(
     return { skipped: true };
   }
 
-  // ★ Validar unicidad columnar (a nivel aplicación, el schema también la enforce)
-  const conflicto = await prisma.tasaBcvHistorico.findFirst({
-    where: {
-      OR: [{ fechaValor }, { tasaUsdBs: tasa }],
-      NOT: { fecha },
-    },
+  // ★ Verificar si ya existe la fechaValor
+  const existenteFV = await prisma.tasaBcvHistorico.findFirst({
+    where: { fechaValor },
   });
-  if (conflicto) {
-    throw new Error(
-      `BCV: conflicto de unicidad. ` +
-        `fechaValor=${fechaValor.toISOString().slice(0, 10)} ` +
-        `o tasa=${tasa} ya existen en id=${conflicto.id}`
-    );
+
+  if (existenteFV) {
+    const tasaExistente = parseFloat(existenteFV.tasaUsdBs.toString());
+    if (tasaExistente === tasa) {
+      warnings.push(
+        `BCV no ha actualizado: fechaValor=${fechaValor.toISOString().slice(0, 10)} ya registrada. Omitiendo.`
+      );
+      return { skipped: true, warnings };
+    } else {
+      throw new Error(
+        `BCV: anomalía. fechaValor=${fechaValor.toISOString().slice(0, 10)} ya existe con tasa ${tasaExistente} != ${tasa}`
+      );
+    }
   }
 
   // ★ Validar cadena FV_prev === fecha_new

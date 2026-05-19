@@ -225,23 +225,118 @@ export function extractConcepto(text: string): string | null {
 
 // ─── Fecha del pago ────────────────────────────────────────────────────────
 
-export function extractFechaPago(text: string): string | null {
-  // 1. Por etiqueta FECHA
-  const raw = valueAfterLabel(text, ['FECHA', 'DATE']);
-  const candidates: string[] = [];
-  if (raw) candidates.push(raw);
-  // 2. Cualquier patrón DD/MM/YYYY en el texto
-  const re = /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g;
-  for (const m of text.matchAll(re)) candidates.push(m[0]);
+// ─── Utilidades para Fecha ──────────────────────────────────────────────────
+const MESES_ES: Record<string, string> = {
+  enero: '01', feb: '02', febrero: '02', marzo: '03', abr: '04', abril: '04',
+  mayo: '05', jun: '06', junio: '06', jul: '07', julio: '07', ago: '08',
+  agosto: '08', sep: '09', sept: '09', septiembre: '09', oct: '10', octubre: '10',
+  nov: '11', noviembre: '11', dic: '12', diciembre: '12'
+};
 
-  for (const c of candidates) {
-    const m = c.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
-    if (m) {
-      const [, d, mo, y] = m;
-      return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+function isValidDate(y: number, m: number, d: number): boolean {
+  if (y < 2024 || y > 2035) return false;
+  if (m < 1 || m > 12) return false;
+  if (d < 1 || d > 31) return false;
+  const date = new Date(y, m - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return false;
+  const hoyMas7 = new Date();
+  hoyMas7.setDate(hoyMas7.getDate() + 7);
+  if (date > hoyMas7) return false; // Rechaza fechas futuras absurdas
+  return true;
+}
+
+export function extractFechaPago(text: string): string | null {
+  const candidates: Array<{ text: string, score: number }> = [];
+
+  // M1: Múltiples labels
+  const rawLabel = valueAfterLabel(text, [
+    'FECHA Y HORA', 'FECHA DE LA OPERACIÓN', 'FECHA DE LA OPERACION',
+    'FECHA', 'DATE', 'F:'
+  ]);
+  if (rawLabel) candidates.push({ text: rawLabel, score: 10 }); // M6: Alto score por estar junto al label
+
+  // También buscamos en todo el texto (fallback)
+  candidates.push({ text, score: 1 });
+
+  let bestDate: string | null = null;
+  let bestScore = -1;
+
+  for (const cand of candidates) {
+    // M8: Recorte de hora. Elimina patrones HH:MM:SS(AM|PM)? al final del string para que no se pegue.
+    // Requerimos que tenga al menos un separador de tiempo claro (:) o AM/PM para no borrar años como '2026'
+    let cleaned = cand.text.replace(/(?:[0-2]?[0-9])[:]+[0-5][0-9](?:[:]+[0-5][0-9])?\s*(?:AM|PM|am|pm)?\b/ig, ' ');
+    // Si la hora está pegada como 202602:50:03AM, quitamos desde el 02:50
+    cleaned = cleaned.replace(/(?:\d{4})([0-2][0-9][:oO][0-5][0-9][:oO][0-5][0-9]\s*(?:AM|PM|am|pm)?)/ig, (match, p1) => match.replace(p1, ' '));
+    // Y un reemplazo para el caso exacto AM/PM pegado o formato raro sin que coincida con 2026
+    cleaned = cleaned.replace(/[0-2]?[0-9][O0o:]+[0-5][0-9](?:[O0o:]+[0-5][0-9])?\s*(?:AM|PM|am|pm)\b/ig, ' ');
+    
+    // Convertir a minúsculas para buscar meses en letras (M2)
+    const lowerCleaned = cleaned.toLowerCase();
+    const textPattern = /(\d{1,2})\s+(?:de\s+)?(enero|feb|febrero|marzo|abr|abril|mayo|jun|junio|jul|julio|ago|agosto|sep|sept|septiembre|oct|octubre|nov|noviembre|dic|diciembre)\s+(?:de\s+)?(\d{4}|\d{2})\b/g;
+    for (const match of lowerCleaned.matchAll(textPattern)) {
+      let y = parseInt(match[3], 10);
+      if (y < 100) y += 2000;
+      const m = parseInt(MESES_ES[match[2]], 10);
+      const d = parseInt(match[1], 10);
+      if (isValidDate(y, m, d)) {
+        return `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+      }
+    }
+
+    // M4: Dígitos OCR (0↔O/Q, 1↔I/l/|) solo en contexto numérico para fechas.
+    cleaned = cleaned
+      .replace(/[OoQq]/g, '0')
+      // M3: Separadores OCR
+      .replace(/[Il\|\.]/g, '/'); // Convertimos l, I, |, . en /
+
+    // Convertir 1 a / solo si parece separar la fecha (ej. 0610512026 -> 06/05/2026)
+    cleaned = cleaned.replace(/(^|[^0-9])(\d{1,2})1(\d{1,2})1(\d{4})(?=[^0-9]|$)/g, '$1$2/$3/$4');
+
+    // M2: Múltiples formatos numéricos (ahora con /, -, ., espacio o coma como separador)
+    const numPattern = /(\d{1,2})[\/\-\.\s\,]+(\d{1,2})[\/\-\.\s\,]+(\d{4}|\d{2})\b/g;
+    
+    for (const match of cleaned.matchAll(numPattern)) {
+      let y = parseInt(match[3], 10);
+      if (y < 100) y += 2000; // DD/MM/YY
+      
+      let p1 = parseInt(match[1], 10);
+      let p2 = parseInt(match[2], 10);
+      
+      // Intentar DD/MM/YYYY
+      if (isValidDate(y, p2, p1)) {
+        // Formato encontrado
+        const ds = `${y}-${p2.toString().padStart(2, '0')}-${p1.toString().padStart(2, '0')}`;
+        if (cand.score > bestScore) {
+          bestScore = cand.score;
+          bestDate = ds;
+        }
+      } else if (isValidDate(y, p1, p2)) { // Intentar MM/DD/YYYY si falla el otro
+         const ds = `${y}-${p1.toString().padStart(2, '0')}-${p2.toString().padStart(2, '0')}`;
+         if (cand.score > bestScore) {
+           bestScore = cand.score;
+           bestDate = ds;
+         }
+      }
+    }
+    
+    // YYYY-MM-DD format check
+    const isoPattern = /(\d{4})[\/\-\.\s\,]+(\d{1,2})[\/\-\.\s\,]+(\d{1,2})\b/g;
+    for (const match of cleaned.matchAll(isoPattern)) {
+      const y = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const d = parseInt(match[3], 10);
+      if (isValidDate(y, m, d)) {
+        const ds = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        if (cand.score > bestScore) {
+          bestScore = cand.score;
+          bestDate = ds;
+        }
+      }
     }
   }
-  return null;
+
+  // M9: Fallback null
+  return bestDate;
 }
 
 // ─── Cédula del receptor ───────────────────────────────────────────────────

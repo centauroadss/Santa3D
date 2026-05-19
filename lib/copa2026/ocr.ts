@@ -150,8 +150,8 @@ export async function validarComprobanteOcr(
   }
   const fechaPagoCaracas = DateTime.fromJSDate(finalFechaPago).setZone(TZ).startOf('day').toJSDate();
   const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
-    where: { fecha: { lte: fechaPagoCaracas } },
-    orderBy: { fecha: 'desc' },
+    where: { fechaValor: { lte: fechaPagoCaracas } },
+    orderBy: { fechaValor: 'desc' },
   });
   const tasaUsada = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : null;
   const montoEsperadoBs = tasaUsada !== null ? tasaUsada * costoUsd : null;
