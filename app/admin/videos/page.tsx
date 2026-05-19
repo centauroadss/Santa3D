@@ -46,6 +46,7 @@ interface InscripcionData {
     ocrConceptoExtraido: string | null;
     ocrFechaExtraida: string | null;
     ocrConformidadGeneral: boolean;
+    estatusPago: string;
     videos: VideoData[];
 }
 
@@ -66,8 +67,12 @@ export default function AdminInscripcionesPage() {
     // Playing
     const [playingVideo, setPlayingVideo] = useState<string | null>(null);
     const [playingImage, setPlayingImage] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+    // Editing State
+    const [editingInscripcion, setEditingInscripcion] = useState<InscripcionData | null>(null);
+    const [editFormData, setEditFormData] = useState<any>({});
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         fetchInscripciones();
@@ -119,7 +124,50 @@ export default function AdminInscripcionesPage() {
     };
 
     const handleEdit = (id: string) => {
-        alert('Funcionalidad de edición en desarrollo.');
+        const insc = inscripciones.find(i => i.id === id);
+        if (insc) {
+            setEditingInscripcion(insc);
+            setEditFormData({
+                nombre: insc.participantName.split(' ')[0] || '',
+                apellido: insc.participantName.split(' ').slice(1).join(' ') || '',
+                cedulaIdentidad: insc.cedulaIdentidad || '',
+                email: insc.email || '',
+                telefono: insc.telefono || '',
+                instagram: insc.instagram || '',
+                categoria: insc.categoria || 'RENDER',
+                estatusInscripcion: insc.estatusInscripcion || 'PENDIENTE',
+                pago: {
+                    bancoOrigenCodigo: insc.bancoOrigen || '',
+                    referencia: insc.referencia || '',
+                    montoCapturadoBs: insc.montoBs || '',
+                    concepto: insc.concepto || '',
+                    estatusPago: insc.estatusPago || 'EN_REVISION'
+                }
+            });
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingInscripcion) return;
+        setIsSaving(true);
+        try {
+            const token = localStorage.getItem('admin_token');
+            const res = await axios.put(`/api/admin/inscripciones/${editingInscripcion.id}`, editFormData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.success) {
+                alert('Inscripción actualizada correctamente');
+                setEditingInscripcion(null);
+                fetchInscripciones(); // Recargar datos
+            } else {
+                alert('Error al guardar: ' + res.data.error);
+            }
+        } catch (error: any) {
+            console.error('Error saving:', error);
+            alert('Error de conexión al guardar: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const safeFormatDate = (dateStr: string) => {
@@ -501,6 +549,178 @@ export default function AdminInscripcionesPage() {
                             alt="Media Preview" 
                             className="max-w-full max-h-[90vh] object-contain rounded-xl"
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Edición */}
+            {editingInscripcion && (
+                <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl p-6 relative my-8">
+                        <button 
+                            onClick={() => setEditingInscripcion(null)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
+                        >
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Editar Inscripción</h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Columna Izquierda: Datos Participante */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-bold text-brand-purple">Datos del Participante</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Nombre</label>
+                                        <Input 
+                                            value={editFormData.nombre} 
+                                            onChange={(e) => setEditFormData({...editFormData, nombre: e.target.value})}
+                                            className="w-full text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Apellido</label>
+                                        <Input 
+                                            value={editFormData.apellido} 
+                                            onChange={(e) => setEditFormData({...editFormData, apellido: e.target.value})}
+                                            className="w-full text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Cédula Identidad</label>
+                                    <Input 
+                                        value={editFormData.cedulaIdentidad} 
+                                        onChange={(e) => setEditFormData({...editFormData, cedulaIdentidad: e.target.value})}
+                                        className="w-full text-sm font-mono"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Teléfono</label>
+                                        <Input 
+                                            value={editFormData.telefono} 
+                                            onChange={(e) => setEditFormData({...editFormData, telefono: e.target.value})}
+                                            className="w-full text-sm font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Instagram</label>
+                                        <Input 
+                                            value={editFormData.instagram} 
+                                            onChange={(e) => setEditFormData({...editFormData, instagram: e.target.value})}
+                                            className="w-full text-sm font-mono"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Email</label>
+                                    <Input 
+                                        value={editFormData.email} 
+                                        onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                                        className="w-full text-sm font-mono"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mt-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Categoría</label>
+                                        <select 
+                                            className="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-purple focus:border-brand-purple"
+                                            value={editFormData.categoria}
+                                            onChange={(e) => setEditFormData({...editFormData, categoria: e.target.value})}
+                                        >
+                                            <option value="RENDER">RENDER</option>
+                                            <option value="IA">IA</option>
+                                            <option value="AMBAS">AMBAS</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Estatus General</label>
+                                        <select 
+                                            className="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-brand-purple focus:border-brand-purple"
+                                            value={editFormData.estatusInscripcion}
+                                            onChange={(e) => setEditFormData({...editFormData, estatusInscripcion: e.target.value})}
+                                        >
+                                            <option value="PENDIENTE">PENDIENTE</option>
+                                            <option value="COMPLETADO">COMPLETADO</option>
+                                            <option value="RECHAZADO">RECHAZADO</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Columna Derecha: Datos Pago */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-bold text-brand-purple">Datos de Pago Declarados</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Cód. Banco</label>
+                                        <Input 
+                                            value={editFormData.pago?.bancoOrigenCodigo} 
+                                            onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, bancoOrigenCodigo: e.target.value}})}
+                                            className="w-full text-sm font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Referencia</label>
+                                        <Input 
+                                            value={editFormData.pago?.referencia} 
+                                            onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, referencia: e.target.value}})}
+                                            className="w-full text-sm font-mono"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Monto Bs</label>
+                                    <Input 
+                                        type="number"
+                                        step="0.01"
+                                        value={editFormData.pago?.montoCapturadoBs} 
+                                        onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, montoCapturadoBs: e.target.value}})}
+                                        className="w-full text-sm font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Concepto</label>
+                                    <textarea 
+                                        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-purple focus:border-brand-purple font-mono"
+                                        rows={3}
+                                        value={editFormData.pago?.concepto} 
+                                        onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, concepto: e.target.value}})}
+                                    />
+                                </div>
+                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mt-4">
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Estatus del Pago</label>
+                                    <select 
+                                        className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-sm font-bold text-blue-700 focus:ring-2 focus:ring-brand-purple focus:border-brand-purple"
+                                        value={editFormData.pago?.estatusPago}
+                                        onChange={(e) => setEditFormData({...editFormData, pago: {...editFormData.pago, estatusPago: e.target.value}})}
+                                    >
+                                        <option value="EN_REVISION">EN_REVISION</option>
+                                        <option value="VALIDADO">VALIDADO</option>
+                                        <option value="RECHAZADO">RECHAZADO</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-8 pt-4 border-t border-gray-200 flex justify-end gap-3">
+                            <button 
+                                onClick={() => setEditingInscripcion(null)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={handleSaveEdit}
+                                disabled={isSaving}
+                                className="px-6 py-2 bg-brand-purple text-white rounded-lg text-sm font-bold hover:bg-brand-purple/90 transition-colors flex items-center"
+                            >
+                                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
