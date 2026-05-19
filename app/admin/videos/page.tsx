@@ -31,6 +31,7 @@ interface InscripcionData {
     email: string;
     telefono: string;
     categoria: string;
+    biografia: string;
     estatusInscripcion: string;
     createdAt: string;
     fotoPerfilUrl: string | null;
@@ -136,6 +137,9 @@ export default function AdminInscripcionesPage() {
                 telefono: insc.telefono || '',
                 instagram: insc.instagram || '',
                 categoria: insc.categoria || 'RENDER',
+                biografia: insc.biografia || '',
+                fechaNacimiento: insc.fechaNacimiento ? insc.fechaNacimiento.split('T')[0] : '',
+                edad: insc.edad || '',
                 estatusInscripcion: insc.estatusInscripcion || 'PENDIENTE',
                 pago: {
                     bancoOrigenCodigo: insc.bancoOrigen || '',
@@ -345,7 +349,7 @@ export default function AdminInscripcionesPage() {
                                                     <UserCircle size={24} />
                                                 </div>
                                             )}
-                                            <div>
+                                            <div title={insc.biografia || 'Sin biografía'}>
                                                 <div className="font-bold text-gray-900 leading-tight flex items-center gap-2">
                                                     {insc.participantName}
                                                     <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold tracking-wider ${insc.categoria === 'RENDER' ? 'bg-red-100 text-red-700' : insc.categoria === 'IA' ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700'}`}>
@@ -605,6 +609,41 @@ export default function AdminInscripcionesPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Fecha Nacimiento</label>
+                                        <Input 
+                                            type="date"
+                                            value={editFormData.fechaNacimiento} 
+                                            onChange={(e) => {
+                                                const newDate = e.target.value;
+                                                // auto calculate age
+                                                let newAge = editFormData.edad;
+                                                if (newDate) {
+                                                    const today = new Date();
+                                                    const birthDate = new Date(newDate);
+                                                    let age = today.getFullYear() - birthDate.getFullYear();
+                                                    const m = today.getMonth() - birthDate.getMonth();
+                                                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                                                        age--;
+                                                    }
+                                                    newAge = age.toString();
+                                                }
+                                                setEditFormData({...editFormData, fechaNacimiento: newDate, edad: newAge});
+                                            }}
+                                            className="w-full text-sm font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-600 mb-1">Edad</label>
+                                        <Input 
+                                            type="number"
+                                            value={editFormData.edad} 
+                                            onChange={(e) => setEditFormData({...editFormData, edad: e.target.value})}
+                                            className="w-full text-sm font-mono"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
                                         <label className="block text-xs font-bold text-gray-600 mb-1">Teléfono</label>
                                         <Input 
                                             value={editFormData.telefono} 
@@ -627,6 +666,15 @@ export default function AdminInscripcionesPage() {
                                         value={editFormData.email} 
                                         onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
                                         className="w-full text-sm font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-600 mb-1">Biografía</label>
+                                    <textarea 
+                                        value={editFormData.biografia} 
+                                        onChange={(e) => setEditFormData({...editFormData, biografia: e.target.value})}
+                                        className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-brand-purple focus:border-brand-purple min-h-[80px]"
+                                        placeholder="Biografía o descripción del participante"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 mt-4">

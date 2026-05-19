@@ -117,6 +117,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         instagram: body.instagram,
         categoria: body.categoria,
         estatusInscripcion: body.estatusInscripcion,
+        biografia: body.biografia,
+        fechaNacimiento: body.fechaNacimiento ? new Date(body.fechaNacimiento) : undefined,
+        edad: body.edad ? parseInt(body.edad, 10) : undefined,
       },
     });
 

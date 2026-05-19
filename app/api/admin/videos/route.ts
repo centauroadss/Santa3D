@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
         telefono: insc.telefono,
         categoria: insc.categoria,
         estatusInscripcion: insc.estatusInscripcion,
+        biografia: insc.biografia,
         createdAt: insc.createdAt.toISOString(),
         fotoPerfilUrl: fotoPerfilUrl,
         comprobanteUrl: comprobanteUrl,
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest) {
         ocrConceptoExtraido: insc.pago?.ocrConceptoExtraido || null,
         ocrFechaExtraida: insc.pago?.ocrFechaExtraida ? insc.pago.ocrFechaExtraida.toISOString() : null,
         ocrConformidadGeneral: insc.pago?.ocrConformidadGeneral || false,
+        estatusPago: insc.pago?.estatusPago || 'EN_REVISION',
         videos: formattedVideos
       };
     }));
