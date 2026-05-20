@@ -15,9 +15,12 @@ export default function EmailConfigAndLogs() {
 
     const fetchData = async () => {
         try {
+            const token = localStorage.getItem('admin_token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
             const [configRes, logsRes] = await Promise.all([
-                fetch('/api/admin/emails/config'),
-                fetch('/api/admin/emails/logs')
+                fetch('/api/admin/emails/config', { headers }),
+                fetch('/api/admin/emails/logs', { headers })
             ]);
             
             const configData = await configRes.json();
@@ -38,9 +41,13 @@ export default function EmailConfigAndLogs() {
         setMessage('');
 
         try {
+            const token = localStorage.getItem('admin_token');
             const res = await fetch('/api/admin/emails/config', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ dynamicLinks })
             });
 
