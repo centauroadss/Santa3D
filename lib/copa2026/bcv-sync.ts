@@ -43,7 +43,7 @@ export function parseFechaValor(html: string): DateTime {
   if (!mes) throw new Error(`BCV: mes desconocido ${mesTxt}`);
   return DateTime.fromObject(
     { year: +y, month: mes, day: +d },
-    { zone: TZ }
+    { zone: 'utc' }
   ).startOf('day');
 }
 
@@ -64,7 +64,8 @@ export function parseTasaUsd(html: string): number {
  * Reemplaza el bug `new Date().setUTCHours(0,0,0,0)` que devolvía el día UTC.
  */
 export function caracasToday(now: Date = new Date()): Date {
-  return DateTime.fromJSDate(now).setZone(TZ).startOf('day').toJSDate();
+  const dt = DateTime.fromJSDate(now).setZone(TZ);
+  return new Date(Date.UTC(dt.year, dt.month - 1, dt.day));
 }
 
 // ─── HTTP con reintentos (★ FIX scraping frágil) ────────────────────────────
@@ -144,8 +145,8 @@ export async function syncBcv(
   const fecha = caracasToday(now);
   const warnings: string[] = [];
 
-  // ★ Regla R1: fechaValor > fecha (Estricto para garantizar continuidad un día antes)
-  if (fechaValor.getTime() <= fecha.getTime()) {
+  // ★ Regla R1: fechaValor >= fecha
+  if (fechaValor.getTime() < fecha.getTime()) {
     return { skipped: true };
   }
 

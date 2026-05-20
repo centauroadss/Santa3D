@@ -148,7 +148,8 @@ export async function validarComprobanteOcr(
       finalFechaPago = parsed;
     }
   }
-  const fechaPagoCaracas = DateTime.fromJSDate(finalFechaPago).setZone(TZ).startOf('day').toJSDate();
+  const dt = DateTime.fromJSDate(finalFechaPago).setZone(TZ);
+  const fechaPagoCaracas = new Date(Date.UTC(dt.year, dt.month - 1, dt.day));
   const bcvRecord = await prisma.tasaBcvHistorico.findFirst({
     where: { fechaValor: { lte: fechaPagoCaracas } },
     orderBy: { fechaValor: 'desc' },

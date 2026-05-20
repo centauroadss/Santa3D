@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        const hoyCaracas = DateTime.now().setZone(TZ).startOf('day').toJSDate();
+        const nowDt = DateTime.now().setZone(TZ);
+        const hoyCaracas = new Date(Date.UTC(nowDt.year, nowDt.month - 1, nowDt.day)).getTime();
 
         const historico = await prisma.tasaBcvHistorico.findMany({
             orderBy: {
@@ -48,10 +49,10 @@ export async function GET(request: NextRequest) {
             if (!seenFv.has(fvStr)) {
                 seenFv.add(fvStr);
 
-                const fv = DateTime.fromJSDate(h.fechaValor).setZone(TZ).startOf('day').toJSDate();
+                const fvTime = h.fechaValor.getTime();
                 let estado: 'futura' | 'vigente' | 'historica';
-                if (+fv > +hoyCaracas)       estado = 'futura';
-                else if (+fv === +hoyCaracas) estado = 'vigente';
+                if (fvTime > hoyCaracas)       estado = 'futura';
+                else if (fvTime === hoyCaracas) estado = 'vigente';
                 else                          estado = 'historica';
 
                 const tasa = parseFloat(h.tasaUsdBs.toString());
