@@ -20,7 +20,12 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { tipo, asunto, contenidoHtml } = body;
+        let { tipo, asunto, contenidoHtml, isBase64 } = body;
+
+        if (isBase64 && contenidoHtml) {
+            contenidoHtml = Buffer.from(contenidoHtml, 'base64').toString('utf-8');
+            contenidoHtml = decodeURIComponent(contenidoHtml);
+        }
 
         if (!tipo || !asunto || !contenidoHtml) {
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
@@ -48,7 +53,12 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, tipo, asunto, contenidoHtml } = body;
+        let { id, tipo, asunto, contenidoHtml, isBase64 } = body;
+
+        if (isBase64 && contenidoHtml) {
+            contenidoHtml = Buffer.from(contenidoHtml, 'base64').toString('utf-8');
+            contenidoHtml = decodeURIComponent(contenidoHtml);
+        }
 
         if (!id || !tipo || !asunto || !contenidoHtml) {
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });

@@ -234,6 +234,9 @@ export async function POST(req: Request) {
         montoBs: inscripcion.pago?.montoCapturadoBs ?? 0,
         telefonoPago: inscripcion.pago?.telefonoPago ?? '-',
         tokenVideo: inscripcion.tokenVideo,
+        biografia: inscripcion.biografia,
+        fotoPerfilUrl: fotoUrl,
+        comprobanteUrl: comprobanteUrl
       });
     } catch (e) {
       console.error('Error enviando email de bienvenida:', e);
