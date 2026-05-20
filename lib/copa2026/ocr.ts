@@ -143,7 +143,7 @@ export async function validarComprobanteOcr(
   // ─── 3. Tasa BCV vigente para la fecha del pago ─────────────────────
   let finalFechaPago = fechaPago;
   if (fields.fechaPago) {
-    const parsed = new Date(fields.fechaPago + 'T12:00:00Z');
+    const parsed = new Date(fields.fechaPago);
     if (!isNaN(parsed.getTime())) {
       finalFechaPago = parsed;
     }

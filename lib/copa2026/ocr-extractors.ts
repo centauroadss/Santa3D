@@ -262,6 +262,18 @@ export function extractFechaPago(text: string): string | null {
   let bestScore = -1;
 
   for (const cand of candidates) {
+    let timeStr = '12:00:00';
+    const timeMatch = cand.text.match(/(?:([0-2]?[0-9])[:]+([0-5][0-9])(?:[:]+([0-5][0-9]))?\s*(AM|PM|am|pm)?)\b/i);
+    if (timeMatch) {
+      let h = parseInt(timeMatch[1], 10);
+      let m = parseInt(timeMatch[2], 10);
+      let s = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
+      const ampm = timeMatch[4] ? timeMatch[4].toUpperCase() : null;
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
     // M8: Recorte de hora. Elimina patrones HH:MM:SS(AM|PM)? al final del string para que no se pegue.
     // Requerimos que tenga al menos un separador de tiempo claro (:) o AM/PM para no borrar años como '2026'
     let cleaned = cand.text.replace(/(?:[0-2]?[0-9])[:]+[0-5][0-9](?:[:]+[0-5][0-9])?\s*(?:AM|PM|am|pm)?\b/ig, ' ');
@@ -279,7 +291,7 @@ export function extractFechaPago(text: string): string | null {
       const m = parseInt(MESES_ES[match[2]], 10);
       const d = parseInt(match[1], 10);
       if (isValidDate(y, m, d)) {
-        return `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        return `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}T${timeStr}-04:00`;
       }
     }
 
@@ -305,13 +317,13 @@ export function extractFechaPago(text: string): string | null {
       // Intentar DD/MM/YYYY
       if (isValidDate(y, p2, p1)) {
         // Formato encontrado
-        const ds = `${y}-${p2.toString().padStart(2, '0')}-${p1.toString().padStart(2, '0')}`;
+        const ds = `${y}-${p2.toString().padStart(2, '0')}-${p1.toString().padStart(2, '0')}T${timeStr}-04:00`;
         if (cand.score > bestScore) {
           bestScore = cand.score;
           bestDate = ds;
         }
       } else if (isValidDate(y, p1, p2)) { // Intentar MM/DD/YYYY si falla el otro
-         const ds = `${y}-${p1.toString().padStart(2, '0')}-${p2.toString().padStart(2, '0')}`;
+         const ds = `${y}-${p1.toString().padStart(2, '0')}-${p2.toString().padStart(2, '0')}T${timeStr}-04:00`;
          if (cand.score > bestScore) {
            bestScore = cand.score;
            bestDate = ds;
@@ -326,7 +338,7 @@ export function extractFechaPago(text: string): string | null {
       const m = parseInt(match[2], 10);
       const d = parseInt(match[3], 10);
       if (isValidDate(y, m, d)) {
-        const ds = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        const ds = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}T${timeStr}-04:00`;
         if (cand.score > bestScore) {
           bestScore = cand.score;
           bestDate = ds;
