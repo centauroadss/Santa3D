@@ -41,24 +41,24 @@ export default async function LandingPage() {
   const deadlineText = `El plazo es hasta el ${formattedDate} a la media noche`;
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white selection:bg-red-500/30">
+    <main className="min-h-screen bg-[#050505] text-white selection:bg-[#f48240]/30">
       <section className="relative pt-20 pb-32 px-4 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-red-600/10 blur-[120px] rounded-full -z-10"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-[#f48240]/10 blur-[120px] rounded-full -z-10"></div>
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <CountdownTimer deadline={fechaFinConcurso} deadlineText={deadlineText} />
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest animate-pulse">
-            Convocatoria 2025 • Caracas, Venezuela
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f48240]/10 border border-[#f48240]/20 text-[#f48240] text-xs font-black uppercase tracking-widest animate-pulse">
+            Convocatoria 2026 • Caracas, Venezuela
           </div>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500">
-            TU ARTE 3D <br /> VENEZOLANO
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] text-transparent bg-clip-text bg-gradient-to-b from-[#f48240] to-white">
+            CONCURSO CREATIVO:<br />FUTBOL ART 3D
           </h1>
-          <p className="text-2xl md:text-3xl font-bold text-white tracking-widest uppercase">
-            En la Pantalla de Chacao
+          <p className="text-2xl md:text-3xl font-bold text-[#7b46a9] tracking-widest uppercase">
+            2DA EDICIÓN
           </p>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed">
-            Participa en el concurso de 3D/motion graphics más importante del año. Los mejores Santa Venezolanos animados, dominarán la pantalla LED más mágica de la ciudad.
+            Participa en el concurso de 3D y motion graphics más importante del año. Demuestra tu talento en las categorías Render e Inteligencia Artificial.
           </p>
-          <p className="text-red-400 font-bold text-lg mt-4 animate-pulse">
+          <p className="text-[#f48240] font-bold text-lg mt-4 animate-pulse">
             {deadlineText}
           </p>
           <GatewayButtons isClosed={isClosed} hasVideos={hasVideos} votingClosed={votingClosed} />
@@ -68,8 +68,8 @@ export default async function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 py-20 border-t border-white/5" id="premios">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { icon: <Monitor className="text-blue-400" />, title: "Formato Vertical", desc: "Resolución exacta de 1024x1792 para el kiosko de Chacao." },
-            { icon: <Gamepad2 className="text-red-400" />, title: "Creatividad 3D", desc: "Uso libre de software (Blender, C4D, Unreal Engine)." },
+            { icon: <Monitor className="text-[#7b46a9]" />, title: "Formato Vertical", desc: "Resolución exacta de 1024x1792 para el kiosko de Chacao." },
+            { icon: <Gamepad2 className="text-[#f48240]" />, title: "Creatividad", desc: "Uso libre de software (Blender, C4D, IA Generativa)." },
             { icon: <Trophy className="text-amber-400" />, title: "Gran Premio", desc: "Exposición masiva y premios en metálico para el top 3." }
           ].map((item, i) => (
             <div key={i} className="p-8 rounded-[32px] bg-white/5 border border-white/10 space-y-4 hover:border-white/20 transition-colors">

@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link';
 import './globals.css'
 export const metadata: Metadata = {
-  title: 'Concurso Santa 3D Venezolano | @centauroads',
-  description: 'Crea un Santa 3D tan criollo como tú. Premio: $600 USD + Proyección en pantalla outdoor de 10 metros en Chacao.',
-  keywords: 'concurso, 3D, animación, Venezuela, Santa, Navidad, Centauro ADS',
+  title: 'Concurso Futbol ART 3D 2026 | @centauroads',
+  description: 'Participa en el concurso de Arte 3D Futbolero. Premio en metálico y proyección en pantalla outdoor en Chacao.',
+  keywords: 'concurso, 3D, animación, IA, Venezuela, Futbol, Centauro ADS',
   authors: [{ name: 'Centauro ADS' }],
   openGraph: {
-    title: 'Concurso Santa 3D Venezolano',
-    description: 'Participa y gana $600 USD + proyección en pantalla gigante',
+    title: 'Concurso Futbol ART 3D 2026',
+    description: 'Participa y gana premios + proyección en pantalla gigante',
     type: 'website',
   },
 }
@@ -34,8 +34,8 @@ export default function RootLayout({
                 <span className="text-[10px] text-white font-bold tracking-widest uppercase mt-1 drop-shadow-md">Visibilidad que conecta</span>
               </div>
               <div className="hidden md:flex flex-col border-l border-gray-700 pl-4 ml-4 justify-center">
-                <h1 className="font-black text-white text-xl leading-none tracking-tight drop-shadow-md">CONCURSO SANTA 3D</h1>
-                <span className="font-bold text-white text-lg tracking-[0.2em] leading-tight drop-shadow-md">VENEZOLANO</span>
+                <h1 className="font-black text-white text-xl leading-none tracking-tight drop-shadow-md">CONCURSO FUTBOL ART</h1>
+                <span className="font-bold text-white text-lg tracking-[0.2em] leading-tight drop-shadow-md">3D 2026</span>
               </div>
             </div>
             {/* Navigation */}
@@ -73,7 +73,7 @@ export default function RootLayout({
             </p>
             <a
               href="mailto:mercadeo@centauroads.com"
-              className="text-xl font-bold text-white hover:text-red-500 transition-colors inline-flex items-center gap-2"
+              className="text-xl font-bold text-white hover:text-[#f48240] transition-colors inline-flex items-center gap-2"
             >
               📧 mercadeo@centauroads.com
             </a>
