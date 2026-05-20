@@ -144,8 +144,8 @@ export async function syncBcv(
   const fecha = caracasToday(now);
   const warnings: string[] = [];
 
-  // ★ Regla R1: fechaValor >= fecha
-  if (fechaValor.getTime() < fecha.getTime()) {
+  // ★ Regla R1: fechaValor > fecha (Estricto para garantizar continuidad un día antes)
+  if (fechaValor.getTime() <= fecha.getTime()) {
     return { skipped: true };
   }
 
