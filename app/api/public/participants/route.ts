@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { StorageService } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        // Fetch participants whose estatusInscripcion is not RECHAZADO (or we can just fetch COMPLETADO/APROBADO)
-        // To be safe and show only active ones:
         const participants = await prisma.inscripcionCopa2026.findMany({
             where: {
                 estatusInscripcion: {
@@ -27,15 +26,23 @@ export async function GET() {
             }
         });
 
-        // Format data: map fotoPerfilPath to a public URL or default, sanitize names
-        const data = participants.map(p => ({
-            id: p.id,
-            nombreCompleto: `${p.nombre} ${p.apellido}`.trim(),
-            categoria: p.categoria,
-            instagram: p.instagram?.replace('@', '') || null,
-            fotoUrl: p.fotoPerfilPath 
-                ? `/api/public/s3-image?key=${encodeURIComponent(p.fotoPerfilPath)}` 
-                : null
+        const data = await Promise.all(participants.map(async (p) => {
+            let fotoUrl = null;
+            if (p.fotoPerfilPath) {
+                try {
+                    fotoUrl = await StorageService.getUrl(p.fotoPerfilPath);
+                } catch (err) {
+                    console.error('Error getting image url:', err);
+                }
+            }
+
+            return {
+                id: p.id,
+                nombreCompleto: `${p.nombre} ${p.apellido}`.trim(),
+                categoria: p.categoria,
+                instagram: p.instagram?.replace('@', '') || null,
+                fotoUrl
+            };
         }));
 
         return NextResponse.json({
