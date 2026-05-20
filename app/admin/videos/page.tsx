@@ -372,10 +372,10 @@ export default function AdminInscripcionesPage() {
                                                     </span>
                                                 </div>
                                                 {/* Biografía Popover */}
-                                                <div className="absolute right-full top-0 mr-4 hidden group-hover:block w-56 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                                                <div className="absolute left-0 top-[calc(100%+0.5rem)] hidden group-hover:block w-64 bg-white text-gray-800 text-xs rounded-lg shadow-xl border border-gray-200 p-4 z-50">
                                                     <div className="font-bold border-b border-gray-100 pb-2 mb-2 text-brand-purple">Biografía</div>
                                                     <div className="whitespace-pre-wrap">{insc.biografia || 'Sin biografía cargada.'}</div>
-                                                    <div className="absolute top-4 -right-2 w-4 h-4 bg-white border-t border-r border-gray-200 transform rotate-45"></div>
+                                                    <div className="absolute -top-2 left-6 w-4 h-4 bg-white border-t border-l border-gray-200 transform rotate-45"></div>
                                                 </div>
                                             </div>
                                         </div>

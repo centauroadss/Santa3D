@@ -5,6 +5,7 @@ import { Sparkles, Video, Trophy, ArrowRight, Gamepad2, Monitor, CheckCircle2 } 
 import JurySection from '@/components/ui/JurySection';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import ParticipantsCounter from '@/components/ui/ParticipantsCounter';
+import ParticipantsList from '@/components/ui/ParticipantsList';
 import GatewayButtons from '@/components/ui/GatewayButtons';
 
 import { prisma } from '@/lib/prisma';
@@ -65,6 +66,7 @@ export default async function LandingPage() {
         </div>
       </section>
       <ParticipantsCounter />
+      <ParticipantsList />
       <section className="max-w-7xl mx-auto px-4 py-20 border-t border-white/5" id="premios">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
