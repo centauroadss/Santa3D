@@ -14,7 +14,11 @@ export async function GET(request: NextRequest) {
         const configs = await prisma.configConcurso.findMany({
             where: {
                 clave: {
-                    in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono', 'emails_bcc_general']
+                    in: [
+                        'costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 
+                        'pago_cedula', 'pago_telefono', 'emails_bcc_general',
+                        'fecha_limite_video', 'fecha_limite_votacion', 'fecha_fin_concurso'
+                    ]
                 }
             }
         });
@@ -29,7 +33,10 @@ export async function GET(request: NextRequest) {
             pago_banco: configMap['pago_banco'] || 'Banesco',
             pago_cedula: configMap['pago_cedula'] || 'J123456789',
             pago_telefono: configMap['pago_telefono'] || '04140000000',
-            emails_bcc_general: configMap['emails_bcc_general'] || 'mercadeo@centauroads.com'
+            emails_bcc_general: configMap['emails_bcc_general'] || 'mercadeo@centauroads.com',
+            fecha_limite_video: configMap['fecha_limite_video'] || '2026-06-05T23:59:59',
+            fecha_limite_votacion: configMap['fecha_limite_votacion'] || '2026-06-15T23:59:59',
+            fecha_fin_concurso: configMap['fecha_fin_concurso'] || '2026-06-20T23:59:59',
         };
 
         return NextResponse.json({ success: true, data: finalConfig }, {
@@ -52,7 +59,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { costo_una_categoria, costo_ambas_categorias, pago_banco, pago_cedula, pago_telefono } = body;
+        const { costo_una_categoria, costo_ambas_categorias, pago_banco, pago_cedula, pago_telefono, fecha_limite_video, fecha_limite_votacion, fecha_fin_concurso } = body;
 
         // Upsert costo_una_categoria
         if (costo_una_categoria !== undefined) {
@@ -105,6 +112,33 @@ export async function PUT(request: NextRequest) {
                 where: { clave: 'emails_bcc_general' },
                 update: { valor: body.emails_bcc_general.toString() },
                 create: { clave: 'emails_bcc_general', valor: body.emails_bcc_general.toString(), descripcion: 'Correos a los que enviar copia oculta (BCC) separados por coma' }
+            });
+        }
+
+        // Upsert fecha_limite_video
+        if (fecha_limite_video !== undefined) {
+            await prisma.configConcurso.upsert({
+                where: { clave: 'fecha_limite_video' },
+                update: { valor: fecha_limite_video.toString() },
+                create: { clave: 'fecha_limite_video', valor: fecha_limite_video.toString(), descripcion: 'Fecha límite para entregar video' }
+            });
+        }
+
+        // Upsert fecha_limite_votacion
+        if (fecha_limite_votacion !== undefined) {
+            await prisma.configConcurso.upsert({
+                where: { clave: 'fecha_limite_votacion' },
+                update: { valor: fecha_limite_votacion.toString() },
+                create: { clave: 'fecha_limite_votacion', valor: fecha_limite_votacion.toString(), descripcion: 'Fecha límite para votar' }
+            });
+        }
+
+        // Upsert fecha_fin_concurso
+        if (fecha_fin_concurso !== undefined) {
+            await prisma.configConcurso.upsert({
+                where: { clave: 'fecha_fin_concurso' },
+                update: { valor: fecha_fin_concurso.toString() },
+                create: { clave: 'fecha_fin_concurso', valor: fecha_fin_concurso.toString(), descripcion: 'Fecha fin del concurso (Cronómetro)' }
             });
         }
 

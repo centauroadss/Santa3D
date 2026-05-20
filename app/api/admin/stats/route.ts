@@ -52,11 +52,11 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Timeline del concurso
-    const submissionDeadline = await prisma.contestSetting.findUnique({
-      where: { key: 'submission_deadline' },
+    const submissionDeadline = await prisma.configConcurso.findUnique({
+      where: { clave: 'fecha_limite_video' },
     });
 
-    const deadline = submissionDeadline ? new Date(submissionDeadline.value) : new Date();
+    const deadline = submissionDeadline ? new Date(submissionDeadline.valor) : new Date('2026-06-05T23:59:59');
     const timeRemaining = getTimeRemaining(deadline);
 
     return NextResponse.json({

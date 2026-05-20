@@ -47,7 +47,7 @@ export async function GET(req: Request) {
         });
 
         const stats = {
-            fechaCierre: configMap['fecha_cierre_videos'] || '2026-06-05T23:59:59Z',
+            fechaCierre: configMap['fecha_limite_video'] || '2026-06-05T23:59:59',
             participantesRequeridos: parseInt(configMap['participantes_requeridos'] || '50'),
             costoInscripcion: parseFloat(configMap['costo_una_categoria'] || '5'),
             totalInscritos,

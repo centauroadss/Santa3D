@@ -16,16 +16,17 @@ export default async function RegistroPage() {
     orderBy: { fechaValor: 'desc' }
   });
   const tasaBcv = bcvRecord ? parseFloat(bcvRecord.tasaUsdBs.toString()) : 55.45; // Fallback
-  // Obtener Configuración Dinámica de Costos y Banco
+  // Obtener Configuración Dinámica de Costos, Banco y Fechas
   const configs = await prisma.configConcurso.findMany({
     where: {
-      clave: { in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono'] }
+      clave: { in: ['costo_una_categoria', 'costo_ambas_categorias', 'pago_banco', 'pago_cedula', 'pago_telefono', 'fecha_fin_concurso'] }
     }
   });
 
   const configMap = configs.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
   const costoUnaCategoria = parseFloat(configMap['costo_una_categoria'] || '5');
   const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
+  const fechaFinConcurso = configMap['fecha_fin_concurso'] || '2026-06-20T23:59:59';
   
   const configPago = {
     banco: configMap['pago_banco'] || 'Banesco',
@@ -70,7 +71,7 @@ export default async function RegistroPage() {
               </span>
             </div>
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-widest">Tiempo Restante para Inscribirse</p>
-            <Countdown deadline="2026-06-05T23:59:59" />
+            <Countdown deadline={fechaFinConcurso} />
           </div>
         </div>
 

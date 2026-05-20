@@ -15,16 +15,37 @@ export const revalidate = 0;
 
 export default async function LandingPage() {
   noStore();
-  const statusSetting = await prisma.contestSetting.findUnique({ where: { key: 'CONTEST_IS_CLOSED' } });
-  const isClosed = statusSetting?.value === 'true';
+  const statusSetting = await prisma.configConcurso.findMany({
+    where: {
+      clave: {
+        in: ['CONTEST_IS_CLOSED', 'fecha_fin_concurso']
+      }
+    }
+  });
+
+  const configMap = statusSetting.reduce((acc, curr) => ({ ...acc, [curr.clave]: curr.valor }), {} as Record<string, string>);
+  const isClosed = configMap['CONTEST_IS_CLOSED'] === 'true';
+  const fechaFinConcurso = configMap['fecha_fin_concurso'] || '2026-06-20T23:59:59';
+  const fechaLimiteVotacion = configMap['fecha_limite_votacion'] || '2026-06-15T23:59:59';
+  
   const videoCount = await prisma.videoCopa2026.count({ where: { estatus: 'APROBADO' } });
   const hasVideos = videoCount > 0;
+
+  // Determine if voting is closed
+  const votingClosed = new Date() > new Date(fechaLimiteVotacion);
+
+  // Format date text
+  const dateObj = new Date(fechaFinConcurso);
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+  const formattedDate = dateObj.toLocaleDateString('es-VE', options);
+  const deadlineText = `El plazo es hasta el ${formattedDate} a la media noche`;
+
   return (
     <main className="min-h-screen bg-[#050505] text-white selection:bg-red-500/30">
       <section className="relative pt-20 pb-32 px-4 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-red-600/10 blur-[120px] rounded-full -z-10"></div>
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <CountdownTimer />
+          <CountdownTimer deadline={fechaFinConcurso} deadlineText={deadlineText} />
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-black uppercase tracking-widest animate-pulse">
             Convocatoria 2025 • Caracas, Venezuela
           </div>
@@ -38,9 +59,9 @@ export default async function LandingPage() {
             Participa en el concurso de 3D/motion graphics más importante del año. Los mejores Santa Venezolanos animados, dominarán la pantalla LED más mágica de la ciudad.
           </p>
           <p className="text-red-400 font-bold text-lg mt-4 animate-pulse">
-            El plazo es hasta el 30 de Diciembre 2025 a la media noche
+            {deadlineText}
           </p>
-          <GatewayButtons isClosed={isClosed} hasVideos={hasVideos} />
+          <GatewayButtons isClosed={isClosed} hasVideos={hasVideos} votingClosed={votingClosed} />
         </div>
       </section>
       <ParticipantsCounter />

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toCaracasDate } from '@/lib/copa2026/ocr';
+import { caracasToday } from '@/lib/copa2026/bcv-sync';
 import { DateTime } from 'luxon';
 
 describe('toCaracasDate', () => {
@@ -10,7 +10,7 @@ describe('toCaracasDate', () => {
       { zone: 'America/Caracas' }
     ).toJSDate();
 
-    const norm = toCaracasDate(raw);
+    const norm = caracasToday(raw);
     const dt = DateTime.fromJSDate(norm).setZone('America/Caracas');
     expect(dt.day).toBe(12);
     expect(dt.month).toBe(5);
@@ -23,12 +23,12 @@ describe('toCaracasDate', () => {
       { year: 2026, month: 5, day: 13, hour: 1 },
       { zone: 'America/Caracas' }
     ).toJSDate();
-    const dt = DateTime.fromJSDate(toCaracasDate(raw)).setZone('America/Caracas');
+    const dt = DateTime.fromJSDate(caracasToday(raw)).setZone('America/Caracas');
     expect(dt.day).toBe(13);
   });
 
   it('acepta string ISO', () => {
-    const dt = DateTime.fromJSDate(toCaracasDate('2026-05-12T15:30:00Z'))
+    const dt = DateTime.fromJSDate(caracasToday(new Date('2026-05-12T15:30:00Z')))
                        .setZone('America/Caracas');
     expect(dt.day).toBe(12);
   });

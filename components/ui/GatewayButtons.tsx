@@ -6,16 +6,21 @@ import { ArrowRight, Video, Sparkles, ChevronLeft } from 'lucide-react';
 interface GatewayButtonsProps {
     isClosed: boolean;
     hasVideos?: boolean;
+    votingClosed?: boolean;
 }
 
-export default function GatewayButtons({ isClosed, hasVideos = false }: GatewayButtonsProps) {
+export default function GatewayButtons({ isClosed, hasVideos = false, votingClosed = false }: GatewayButtonsProps) {
     if (isClosed) {
         return (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <div className="w-full sm:w-auto px-10 py-5 bg-gray-600 text-gray-300 rounded-2xl font-black uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-3 shadow-none">
                     Convocatoria Cerrada
                 </div>
-                {hasVideos ? (
+                {votingClosed ? (
+                    <div title="El plazo de votación ha finalizado" className="w-full sm:w-auto px-10 py-5 bg-gray-800 text-gray-500 border border-gray-700 rounded-2xl font-black uppercase tracking-widest cursor-not-allowed text-center">
+                        Votaciones Cerradas
+                    </div>
+                ) : hasVideos ? (
                     <Link href="/copa2026/votar" className="w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all">
                         Quiero Votar / Ver Videos
                     </Link>
@@ -38,7 +43,11 @@ export default function GatewayButtons({ isClosed, hasVideos = false }: GatewayB
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
             
-            {hasVideos ? (
+            {votingClosed ? (
+                <div title="El plazo de votación ha finalizado" className="w-full sm:w-auto px-10 py-5 bg-gray-800 text-gray-500 border border-gray-700 rounded-2xl font-black uppercase tracking-widest cursor-not-allowed text-center">
+                    Votaciones Cerradas
+                </div>
+            ) : hasVideos ? (
                 <Link href="/copa2026/votar" className="w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all">
                     Quiero Votar / Ver Videos
                 </Link>

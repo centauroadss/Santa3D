@@ -37,8 +37,6 @@ export async function GET(request: NextRequest) {
         const costoAmbasCategorias = parseFloat(configMap['costo_ambas_categorias'] || '10');
 
         const seenFv = new Set<string>();
-        const seenFecha = new Set<string>();
-        const seenTasa = new Set<string>();
         const data: any[] = [];
 
         historico.forEach(h => {
@@ -46,12 +44,9 @@ export async function GET(request: NextRequest) {
             const fechaStr = h.fecha.toISOString().split('T')[0];
             const tasaStr = h.tasaUsdBs.toString();
 
-            // Solo agregamos el registro si NINGUNO de sus tres valores principales se ha visto antes.
-            // Esto garantiza unicidad estricta en las tres columnas.
-            if (!seenFv.has(fvStr) && !seenFecha.has(fechaStr) && !seenTasa.has(tasaStr)) {
+            // Deduplicamos solo por fechaValor para mostrar una única entrada por día de tasa oficial
+            if (!seenFv.has(fvStr)) {
                 seenFv.add(fvStr);
-                seenFecha.add(fechaStr);
-                seenTasa.add(tasaStr);
 
                 const fv = DateTime.fromJSDate(h.fechaValor).setZone(TZ).startOf('day').toJSDate();
                 let estado: 'futura' | 'vigente' | 'historica';

@@ -16,7 +16,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 });
         }
 
-        const deadline = new Date('2026-06-05T23:59:59Z');
+        const configLimite = await prisma.configConcurso.findUnique({ where: { clave: 'fecha_limite_video' } });
+        const deadlineDateStr = configLimite?.valor || '2026-06-05T23:59:59';
+        const deadline = new Date(deadlineDateStr);
         if (inscripcion.estatusInscripcion === 'COMPLETADO') {
             if (new Date() > deadline) {
                 return NextResponse.json({ error: 'El video ya fue cargado y el plazo de reemplazo venció.' }, { status: 400 });

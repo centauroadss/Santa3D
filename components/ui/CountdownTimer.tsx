@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-export default function CountdownTimer() {
+export default function CountdownTimer({ deadline = '2025-12-30T23:59:59', deadlineText = 'El plazo es hasta el 30 de Diciembre 2025 a la media noche' }: { deadline?: string, deadlineText?: string }) {
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
         hours: 0,
@@ -8,8 +8,8 @@ export default function CountdownTimer() {
         seconds: 0
     });
     useEffect(() => {
-        // Fecha de cierre: 30 de Diciembre 2025 a la medianoche
-        const targetDate = new Date('2025-12-30T23:59:59').getTime();
+        // Usa la fecha de cierre dinámica
+        const targetDate = new Date(deadline).getTime();
         const interval = setInterval(() => {
             const now = new Date().getTime();
             const difference = targetDate - now;
@@ -66,9 +66,11 @@ export default function CountdownTimer() {
                         <p className="text-lg md:text-xl font-bold text-white tracking-tight">
                             Asegura tu participación antes del cierre
                         </p>
-                        <p className="text-sm md:text-base text-red-100 font-medium">
-                            El plazo es hasta el 30 de Diciembre 2025 a la media noche
-                        </p>
+                        {deadlineText && (
+                            <p className="text-sm md:text-base text-red-100 font-medium">
+                                {deadlineText}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

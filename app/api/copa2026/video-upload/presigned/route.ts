@@ -18,9 +18,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 });
         }
 
-        const deadline = new Date('2026-06-05T23:59:59Z');
-        if (inscripcion.estatusInscripcion === 'COMPLETADO' && new Date() > deadline) {
-            return NextResponse.json({ error: 'El video ya fue cargado y el plazo de reemplazo venció' }, { status: 400 });
+        const configLimite = await prisma.configConcurso.findUnique({ where: { clave: 'fecha_limite_video' } });
+        const deadlineDateStr = configLimite?.valor || '2026-06-05T23:59:59';
+        const deadline = new Date(deadlineDateStr);
+
+        if (new Date() > deadline) {
+            const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+            const formattedDate = deadline.toLocaleDateString('es-VE', options);
+            return NextResponse.json({ error: `La subida de videos ha sido inhabilitada. La fecha límite de recepción de videos era: ${formattedDate}` }, { status: 400 });
         }
 
         const fileExt = fileName.split('.').pop() || 'mp4';

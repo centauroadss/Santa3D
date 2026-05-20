@@ -21,7 +21,10 @@ export default function ConfiguracionAdminPage() {
         pago_banco: '',
         pago_cedula: '',
         pago_telefono: '',
-        emails_bcc_general: ''
+        emails_bcc_general: '',
+        fecha_limite_video: '2026-06-05T23:59:59',
+        fecha_limite_votacion: '2026-06-15T23:59:59',
+        fecha_fin_concurso: '2026-06-20T23:59:59'
     });
     
     const [historico, setHistorico] = useState<any[]>([]);
@@ -232,6 +235,42 @@ export default function ConfiguracionAdminPage() {
                                 placeholder="ejemplo@correo.com, otro@correo.com"
                             />
                             <p className="text-xs text-gray-500 mt-2">Estos correos recibirán una copia oculta de todas las notificaciones del sistema (inscripciones, rechazos, validaciones). Separa varios correos con comas.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Fechas Importantes</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Límite de Entrega de Video</label>
+                                <Input
+                                    type="datetime-local"
+                                    value={costos.fecha_limite_video}
+                                    onChange={(e) => setCostos({ ...costos, fecha_limite_video: e.target.value })}
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Cierra la subida de videos</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Límite de Votación</label>
+                                <Input
+                                    type="datetime-local"
+                                    value={costos.fecha_limite_votacion}
+                                    onChange={(e) => setCostos({ ...costos, fecha_limite_votacion: e.target.value })}
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Cierra las votaciones públicas</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Fin del Concurso (Cronómetro)</label>
+                                <Input
+                                    type="datetime-local"
+                                    value={costos.fecha_fin_concurso}
+                                    onChange={(e) => setCostos({ ...costos, fecha_fin_concurso: e.target.value })}
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Fecha para contadores y correos</p>
+                            </div>
                         </div>
                     </div>
 
