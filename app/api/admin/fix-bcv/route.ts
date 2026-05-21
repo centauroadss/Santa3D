@@ -1,42 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { DateTime } from 'luxon';
+import { authenticateRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
-        console.log('Iniciando reparación de historico BCV...');
-        
-        const historicos = await prisma.tasaBcvHistorico.findMany();
-        let actualizados = 0;
-
-        for (const h of historicos) {
-            // Asignar `fecha` y `fechaEjecucion` basándose en la `fechaValor`
-            // Para que no todas tengan "13/05/2026, 01:56 a. m." debido a la migración
-            if (h.fechaValor) {
-                // Generar una fecha lógica. Asumimos que la búsqueda se hizo el mismo día o el día anterior.
-                // Usaremos la misma fechaValor a las 10:00 a.m. como valor simulado realista
-                const fechaCorregida = new Date(h.fechaValor);
-                fechaCorregida.setUTCHours(14, 0, 0, 0); // 10:00 AM hora de Caracas (-4)
-
-                await prisma.tasaBcvHistorico.update({
-                    where: { id: h.id },
-                    data: {
-                        fecha: fechaCorregida,
-                        fechaEjecucion: fechaCorregida
-                    }
-                });
-                actualizados++;
-            }
+        const auth = await authenticateRequest(request);
+        if (!auth || auth.role !== 'ADMIN') {
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
+
+        console.log('Iniciando inyección de historico BCV faltante...');
+        
+        const fecha = new Date('2026-05-19T00:00:00.000Z');
+        const fechaValor = new Date('2026-05-20T00:00:00.000Z');
+        const tasaUsdBs = 520.9142;
+
+        const result = await prisma.tasaBcvHistorico.upsert({
+            where: { fecha },
+            update: {
+                fechaValor,
+                tasaUsdBs,
+                fuenteUrl: 'MANUAL_INJECT',
+            },
+            create: {
+                fecha,
+                fechaValor,
+                tasaUsdBs,
+                fuenteUrl: 'MANUAL_INJECT',
+                fechaEjecucion: new Date()
+            }
+        });
 
         return NextResponse.json({ 
             success: true, 
-            message: `Migración completada. Registros actualizados: ${actualizados}`,
-            datos: await prisma.tasaBcvHistorico.findMany({
-                orderBy: { fechaValor: 'desc' }
-            })
+            message: `Registro inyectado correctamente.`,
+            record: result
         });
 
     } catch (error: any) {
