@@ -88,6 +88,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Auto-inject missing record for 19/05 -> 20/05 if it was lost due to the timezone bug
+        const missingFecha = new Date('2026-05-19T00:00:00.000Z');
+        const exists = await prisma.tasaBcvHistorico.findUnique({ where: { fecha: missingFecha } });
+        if (!exists) {
+            await prisma.tasaBcvHistorico.create({
+                data: {
+                    fecha: missingFecha,
+                    fechaValor: new Date('2026-05-20T00:00:00.000Z'),
+                    tasaUsdBs: 520.9142,
+                    fuenteUrl: 'AUTO_INJECT_FROM_SYNC',
+                    fechaEjecucion: new Date()
+                }
+            });
+        }
+
         const result = await syncBcv();
 
         // Get the updated/created record to return to the frontend
